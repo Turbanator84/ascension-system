@@ -1,6 +1,6 @@
 # Ascension System
 
-A leveling-system habit tracker. Daily quests, training, nutrition and school each level up on their own, and five attributes (STR, AGI, VIT, INT, WIL) are graded like sorcerers: **Grade 5 → Grade 4 → Grade 3 → Semi-Grade 2 → Grade 2 → Semi-Grade 1 → Grade 1 → Special Grade**.
+A leveling-system habit tracker with two looks you can switch between in Profile (or with the ⇄ button at the top): **Sorcerer** (crimson ink, Grade 5 → Special Grade) and **System** (blue status window, E → SS+). Daily quests, training, nutrition and school each level up on their own, and five attributes (STR, AGI, VIT, INT, WIL) are graded like sorcerers: **Grade 5 → Grade 4 → Grade 3 → Semi-Grade 2 → Grade 2 → Semi-Grade 1 → Grade 1 → Special Grade**.
 
 ## Tabs
 

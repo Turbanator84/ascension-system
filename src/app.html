@@ -1,8 +1,8 @@
 <title>Ascension System</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
-<style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style id="css-sorcerer">
 /* Layout: one phone-width column of ink-black manga panels on a crimson field with scribbled energy lines; fixed bottom tab bar. Single dark theme by choice. */
 :root{
   color-scheme:dark;
@@ -302,6 +302,295 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;background:var(--f
 .timer{font-family:var(--f-display);font-size:2.2rem;color:var(--p-school)}
 .vkanji{writing-mode:vertical-rl;font-family:var(--f-display);font-size:1.5rem;line-height:1;color:var(--bone);letter-spacing:.06em;text-shadow:2px 2px 0 var(--blood)}
 </style>
+<style id="css-system" media="not all">
+/* "System" style: glowing blue status-window panels. */
+:root{
+  color-scheme:dark;
+  --bg:#060b16; --panel2:#11203d; --field:#08122a; --well:#0a1328; --tile:#0a1530;
+  --line:#1f3a66; --glow:#3aa0ff; --glow-soft:rgba(58,160,255,.18);
+  --fg:#e7eefb; --muted:#8597b8; --dim:#5a6c8e;
+  --good:#38d39f; --warn:#ffb547; --bad:#ff5468;
+  --p-daily:#3aa0ff; --p-train:#ff7a59; --p-fuel:#38d39f; --p-school:#a07bff;
+  --t-e:#8f9bb3; --t-d:#5fd08a; --t-c:#33c8d6; --t-b:#4f8dff; --t-a:#b07bff; --t-s:#ffc53d; --t-ss:#ff4f6d;
+  --f-display:"Chakra Petch","Segoe UI",system-ui,sans-serif;
+  --f-body:"Barlow","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.45;min-height:100%;
+  background:radial-gradient(120% 60% at 50% -10%,#10284f 0%,transparent 60%),radial-gradient(80% 50% at 100% 100%,#1a1240 0%,transparent 60%),var(--bg);background-attachment:fixed}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
+.app{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px calc(96px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:16px}
+.num{font-variant-numeric:tabular-nums}
+h2{font-family:var(--f-display);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:1.2rem;margin:0;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:.86rem;margin:0;color:var(--muted)}
+.lbl{font-family:var(--f-display);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.note{font-size:.82rem;color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;align-items:center;gap:12px}
+.between{justify-content:space-between}
+.wrap{flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.sectionhead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+.win{position:relative;background:linear-gradient(180deg,rgba(17,32,61,.88),rgba(10,20,40,.88));border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 0 24px rgba(58,160,255,.06)}
+.win.bracket::before,.win.bracket::after{content:"";position:absolute;width:28px;height:28px;border:2px solid var(--glow);opacity:.75;pointer-events:none}
+.win.bracket::before{top:-1px;right:-1px;border-left:0;border-bottom:0;border-top-right-radius:14px}
+.win.bracket::after{bottom:-1px;left:-1px;border-right:0;border-top:0;border-bottom-left-radius:14px}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.topbar .sys-tag{font-family:var(--f-display);font-size:.72rem;letter-spacing:.2em;color:var(--glow)}
+.avatar-btn{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px 12px 4px 4px;font-family:var(--f-display);font-size:.8rem}
+.avatar-btn i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#2a4f8f,#0b1630);font-style:normal;font-weight:700}
+
+.hunter{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center}
+.emblem{width:84px;height:84px;position:relative;display:grid;place-items:center}
+.emblem .ring{position:absolute;inset:0;border-radius:50%;border:2px dashed rgba(58,160,255,.6);animation:spin 24s linear infinite}
+.emblem .ring2{position:absolute;inset:7px;border-radius:50%;border:2px solid transparent;border-top-color:var(--glow);border-bottom-color:var(--glow);animation:spin 6s linear infinite reverse}
+.emblem .core{width:60px;height:60px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#2a4f8f,#0b1630);display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:1.6rem;box-shadow:0 0 18px var(--glow-soft)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hname{font-family:var(--f-display);font-weight:700;font-size:1.6rem;line-height:1.1;overflow-wrap:anywhere}
+.htitle{color:var(--muted);font-size:.85rem;letter-spacing:.06em}
+.streak{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;background:linear-gradient(180deg,#5a4510,#3a2c08);border:1px solid #c9952a;color:#ffd166;font-family:var(--f-display);font-weight:600;box-shadow:0 0 14px rgba(255,190,60,.25);margin-top:6px}
+.streak svg{width:14px;height:14px}
+.rankbox{display:flex;flex-direction:column;align-items:center;gap:4px}
+.hex{width:58px;height:64px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:1.25rem;color:#0a1020;flex:none}
+.hex.sm{width:34px;height:38px;font-size:.8rem}
+.hex.xs{width:26px;height:29px;font-size:.66rem}
+.hex.none{background:var(--line);color:var(--muted)}
+.xpbar{height:8px;border-radius:99px;background:var(--well);border:1px solid var(--line);overflow:hidden}
+.xpbar i{display:block;height:100%;background:linear-gradient(90deg,#2b6fff,var(--glow));box-shadow:0 0 10px var(--glow)}
+.xpline{display:flex;justify-content:space-between;gap:8px;font-size:.78rem;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.tE{background:var(--t-e)}.tD{background:var(--t-d)}.tC{background:var(--t-c)}.tB{background:var(--t-b)}.tA{background:var(--t-a)}.tS{background:var(--t-s)}.tSS{background:var(--t-ss)}
+.tSSp{background:conic-gradient(from 0deg,var(--t-s),var(--t-ss),var(--t-a),var(--t-b),var(--t-s))}
+
+.clock{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.clock .t{font-family:var(--f-display);font-weight:700;font-size:1.6rem;color:var(--glow);text-shadow:0 0 12px var(--glow-soft)}
+.clock dl{margin:0;display:grid;grid-template-columns:auto auto;gap:2px 8px;font-family:var(--f-display);font-size:.85rem;text-transform:uppercase}
+.clock dd{margin:0;color:var(--t-c)}
+
+.btn{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:8px 14px;font-family:var(--f-display);font-weight:600;letter-spacing:.06em;font-size:.85rem}
+.btn:hover:not(:disabled){border-color:var(--glow)}
+.btn.pri{background:linear-gradient(180deg,#2a6dff,#1a4fc4);border-color:#4f8dff}
+.btn.danger{border-color:#7a2433;color:#ff8394;background:#2a0f17}
+.btn.ghost{background:transparent}
+.btn.sm{padding:5px 10px;font-size:.75rem}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--muted);flex:none}
+.icon-btn:hover{border-color:var(--line);color:var(--fg)}
+.icon-btn svg{width:18px;height:18px}
+.icon-btn.armed{color:var(--bad);border-color:#7a2433}
+.addfab{width:40px;height:40px;border-radius:50%;background:var(--glow);color:#04101f;border:0;display:grid;place-items:center;box-shadow:0 0 16px var(--glow-soft)}
+.addfab svg{width:20px;height:20px}
+
+.subtabs{display:flex;gap:6px;flex-wrap:wrap}
+.subtabs button{padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:transparent;font-family:var(--f-display);font-size:.8rem;letter-spacing:.05em;color:var(--muted)}
+.subtabs button.on{color:var(--fg);border-color:var(--glow);background:var(--glow-soft)}
+.datebar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.datebar input{width:auto;flex:0 1 170px}
+
+/* path tiles */
+.paths{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.ptile{text-align:left;border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--tile);display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;min-width:0}
+.ptile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--pc)}
+.ptile .pt-top{display:flex;align-items:center;gap:10px}
+.ptile .pt-name{font-family:var(--f-display);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:.85rem;color:var(--pc)}
+.ptile .pt-lv{font-size:.75rem;color:var(--muted)}
+.ptile .pt-now{font-family:var(--f-display);font-weight:600;font-size:.95rem}
+.ptile .pt-st{font-size:.75rem;color:var(--muted)}
+.pbar{height:5px;border-radius:3px;background:var(--well);overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--pc)}
+.streaks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.sk{border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--tile)}
+.sk b{display:flex;align-items:center;gap:4px;font-family:var(--f-display);font-size:1.2rem;color:var(--pc)}
+.sk b svg{width:14px;height:14px}
+.sk span{font-size:.7rem;color:var(--muted);display:block}
+@media (max-width:460px){.streaks{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* quests */
+.quests{display:flex;flex-direction:column;gap:12px}
+.quest{display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;padding:14px 10px 14px 14px}
+.quest.done{opacity:.62}
+.quest.done .qname{text-decoration:line-through;text-decoration-color:rgba(255,255,255,.35)}
+.check{width:34px;height:34px;border-radius:8px;border:2px solid #2f63b8;background:transparent;display:grid;place-items:center;padding:0;flex:none}
+.check svg{width:20px;height:20px;opacity:0;color:#04101f}
+.check.on{background:var(--glow);border-color:var(--glow);box-shadow:0 0 12px var(--glow)}
+.check.on svg{opacity:1}
+.qname{font-family:var(--f-display);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t-c);font-size:1.02rem;overflow-wrap:anywhere}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.chip{font-family:var(--f-display);font-weight:600;font-size:.72rem;letter-spacing:.05em;padding:2px 8px;border-radius:6px;border:1px solid;white-space:nowrap}
+.chip.STR{color:#ff7a59;border-color:#6b2c1e;background:#2a1410}
+.chip.AGI{color:#5fd08a;border-color:#1f5a36;background:#0f2418}
+.chip.VIT{color:#ff6fa5;border-color:#6a2244;background:#2a0f1d}
+.chip.INT{color:#6fb4ff;border-color:#1f4577;background:#0d1d36}
+.chip.WIL{color:#ffc53d;border-color:#6a5016;background:#2a210a}
+.chip.plain{color:var(--muted);border-color:var(--line);background:transparent}
+.chip.bs{color:#ff9f43;border-color:#6a4216;background:#2a1a0a}
+.qright{text-align:right}
+.qamt{font-family:var(--f-display);font-weight:700;font-size:1.35rem;line-height:1}
+.qamt small{font-size:.7rem;color:var(--muted);font-weight:500;margin-left:3px}
+.qxp{font-family:var(--f-display);font-weight:600;color:var(--glow);font-size:.9rem;margin-top:4px}
+.stepper{display:flex;gap:4px;justify-content:flex-end;margin-top:6px}
+.stepper button{min-width:30px;height:26px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);font-family:var(--f-display);font-size:.8rem;padding:0 6px}
+.qbar{grid-column:1/-1;height:3px;border-radius:2px;background:var(--well);overflow:hidden;margin-top:-4px}
+.qbar i{display:block;height:100%;background:var(--glow)}
+.empty{color:var(--muted);text-align:center;padding:22px 12px;border:1px dashed var(--line);border-radius:12px}
+.banner{border-color:#7a2433;background:linear-gradient(180deg,#2a0d16,#1a0a12)}
+.banner .lbl{color:#ff8394}
+.clearbar{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-size:.85rem;color:var(--muted)}
+.clearbar .xpbar{flex:1}
+.clearbar.ok{color:var(--good)}
+
+/* list items */
+.item{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--tile)}
+.item .tt{font-weight:600;overflow-wrap:anywhere}
+.item .sub{font-size:.8rem;color:var(--muted)}
+.item .sub.over{color:var(--bad)} .item .sub.soon{color:var(--warn)}
+.item.done .tt{text-decoration:line-through;color:var(--muted)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.form .full{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label,.flabel{font-family:var(--f-display);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+input,select,textarea{background:var(--field);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:var(--glow);outline:none}
+textarea{min-height:110px;font-family:ui-monospace,Menlo,monospace;font-size:.78rem}
+.days{display:flex;gap:4px;flex-wrap:wrap}
+.days button{width:38px;height:32px;border-radius:7px;border:1px solid var(--line);background:var(--field);font-family:var(--f-display);font-size:.75rem;color:var(--muted)}
+.days button.on{background:var(--glow-soft);border-color:var(--glow);color:var(--fg)}
+.seg{display:flex;gap:4px;flex-wrap:wrap}
+.seg button{flex:1;min-width:38px;padding:7px 6px;border-radius:7px;border:1px solid var(--line);background:var(--field);font-family:var(--f-display);font-weight:700;font-size:.8rem}
+.seg button.on{border-color:var(--glow);background:var(--glow-soft)}
+.exrow{display:grid;grid-template-columns:minmax(0,2.4fr) repeat(3,minmax(0,1fr));gap:6px}
+.exhead{display:grid;grid-template-columns:minmax(0,2.4fr) repeat(3,minmax(0,1fr));gap:6px}
+.exrow input{padding:7px 8px;font-size:.88rem}
+.qchips{display:flex;gap:6px;flex-wrap:wrap}
+.qchips button{border:1px solid var(--line);background:var(--field);border-radius:999px;padding:5px 10px;font-size:.78rem;color:var(--fg)}
+.qchips button b{color:var(--muted);font-weight:500;margin-left:4px}
+
+/* nutrition */
+.fuelhead{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+.kring{position:relative;width:132px;height:132px}
+.kring svg{width:132px;height:132px;transform:rotate(-90deg)}
+.kring .in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.kring .in b{font-family:var(--f-display);font-size:1.5rem;line-height:1}
+.kring .in span{font-size:.72rem;color:var(--muted)}
+.macro{display:grid;grid-template-columns:62px 1fr auto;gap:8px;align-items:center;font-size:.82rem;margin-bottom:8px}
+.macro .pbar{height:7px}
+@media (max-width:420px){.fuelhead{grid-template-columns:1fr;justify-items:center}.fuelhead>div:last-child{width:100%}}
+.water{display:flex;gap:4px;flex-wrap:wrap}
+.water span{width:18px;height:24px;border-radius:3px 3px 6px 6px;border:1px solid #1f4577;background:var(--field)}
+.water span.on{background:linear-gradient(180deg,#5fb4ff,#2a6dff);border-color:#5fb4ff}
+.kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kv div{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--tile)}
+.kv b{display:block;font-family:var(--f-display);font-size:1.1rem}
+.kv span{font-size:.72rem;color:var(--muted)}
+@media (max-width:420px){.kv{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* week dots */
+.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.week div{text-align:center;font-size:.7rem;color:var(--muted)}
+.week i{display:block;height:28px;border-radius:7px;border:1px solid var(--line);background:var(--field);margin-bottom:3px}
+.week i.on{background:var(--p-train);border-color:var(--p-train);box-shadow:0 0 10px rgba(255,122,89,.4)}
+.week i.today{outline:1px solid var(--glow);outline-offset:1px}
+
+/* records */
+.rec{display:grid;grid-template-columns:auto minmax(0,1fr) 128px;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(31,58,102,.6)}
+.rec:last-child{border-bottom:0}
+.rec .rn{font-weight:600}
+.rec .rb{font-size:.8rem;color:var(--muted)}
+.rec form{display:flex;gap:4px}
+.rec input{padding:6px 8px;font-size:.85rem}
+.ladder{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.rung{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--tile)}
+.rung.me{border-color:var(--glow);box-shadow:0 0 14px var(--glow-soft);background:#0f2148}
+.rung.locked{opacity:.55}
+.rung .rv{font-family:var(--f-display);font-weight:600;font-size:.9rem}
+.rung .rs{font-size:.72rem;color:var(--muted)}
+
+/* stats */
+.radarwrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center}
+.radarwrap svg{width:100%;max-width:300px;height:auto;display:block;margin:0 auto}
+@media (max-width:460px){.radarwrap{grid-template-columns:1fr}}
+.overall{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
+.overall .big{font-family:var(--f-display);font-weight:700;font-size:2.6rem;line-height:1}
+.stat{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(31,58,102,.6)}
+.stat:last-child{border-bottom:0}
+.stat .sn{font-family:var(--f-display);font-weight:700;letter-spacing:.08em}
+.stat .sv{font-family:var(--f-display);font-weight:700;font-size:1.3rem;text-align:right}
+.mini{height:5px;border-radius:3px;background:var(--well);overflow:hidden;margin-top:6px}
+.mini i{display:block;height:100%}
+.pcard{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--tile);position:relative;overflow:hidden}
+.pcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--pc)}
+.pcard .pn{font-family:var(--f-display);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--pc)}
+.pcard .ps{display:flex;gap:14px;flex-wrap:wrap;font-size:.78rem;color:var(--muted);margin-top:6px}
+.pcard .ps b{color:var(--fg);font-family:var(--f-display)}
+table.st{width:100%;border-collapse:collapse;font-size:.86rem}
+table.st th,table.st td{padding:8px 6px;border-bottom:1px solid rgba(31,58,102,.6);text-align:right}
+table.st th:first-child,table.st td:first-child{text-align:left}
+table.st th{font-family:var(--f-display);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.chart{width:100%;height:auto;display:block}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.76rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.ach{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ach div{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--tile)}
+.ach div.lock{opacity:.45}
+.ach b{display:block;font-family:var(--f-display);font-size:.85rem}
+.ach span{font-size:.72rem;color:var(--muted)}
+.ach svg{width:22px;height:22px;flex:none;color:var(--t-s)}
+@media (max-width:420px){.ach{grid-template-columns:1fr}}
+
+/* calendar */
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal .dh{text-align:center;font-family:var(--f-display);font-size:.7rem;color:var(--muted);letter-spacing:.08em;padding-bottom:4px}
+.cal button{aspect-ratio:1/1.05;max-width:100%;border:1px solid var(--line);border-radius:9px;background:var(--tile);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:5px 2px 6px;min-width:0}
+.cal button.out{opacity:.35}
+.cal button.today{border-color:var(--glow);box-shadow:inset 0 0 0 1px var(--glow)}
+.cal button.sel{background:#14305e;border-color:#6fb4ff}
+.cal button.fut{background:var(--field)}
+.cal .dn{font-family:var(--f-display);font-size:.85rem}
+.cal .dots{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;min-height:6px}
+.cal .dots i{width:6px;height:6px;border-radius:50%}
+.cal .due{font-size:.6rem;color:var(--warn);font-family:var(--f-display);line-height:1}
+.daydet h4{margin:0 0 4px;font-family:var(--f-display);font-size:.78rem;letter-spacing:.1em;text-transform:uppercase}
+.daydet ul{margin:0;padding-left:18px;font-size:.88rem}
+
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(6,11,22,.95);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+nav.tabs .in{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr)}
+nav.tabs button{background:none;border:0;padding:9px 0 7px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--dim);font-family:var(--f-display);font-size:.68rem;letter-spacing:.03em;min-width:0}
+nav.tabs button svg{width:22px;height:22px}
+nav.tabs button.on{color:var(--good)}
+nav.tabs button.on svg{filter:drop-shadow(0 0 6px rgba(56,211,159,.6))}
+
+.overlay{position:fixed;inset:0;z-index:40;background:rgba(2,6,14,.72);backdrop-filter:blur(3px);display:flex;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+@media (min-width:600px){.overlay{align-items:center}}
+.overlay .win{width:100%;max-width:520px;max-height:88vh;overflow:auto}
+.sys{position:fixed;left:50%;top:calc(18px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:60;width:min(92vw,420px);display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.sysmsg{pointer-events:auto;border:1px solid var(--glow);background:rgba(8,18,40,.97);border-radius:12px;padding:12px 16px;box-shadow:0 0 30px rgba(58,160,255,.35);animation:pop .35s ease-out}
+.sysmsg .lbl{color:var(--glow)}
+.sysmsg b{display:block;font-family:var(--f-display);font-size:1.05rem;margin-top:2px}
+.sysmsg p{margin:2px 0 0;color:var(--muted);font-size:.85rem}
+@keyframes pop{from{opacity:0;transform:translateY(-8px) scale(.97)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.emblem .ring,.emblem .ring2,.sysmsg{animation:none}}
+.sync{font-size:.72rem;color:var(--dim);text-align:center}
+details summary{cursor:pointer;font-family:var(--f-display);font-size:.82rem;letter-spacing:.05em;color:var(--glow)}
+details ol{padding-left:20px;margin:8px 0 0;font-size:.86rem;color:var(--muted)}
+details li{margin-bottom:4px}
+code{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;background:var(--field);padding:1px 5px;border-radius:4px}
+.swatches{display:flex;gap:6px;flex-wrap:wrap}
+.swatches button{width:26px;height:26px;border-radius:50%;border:2px solid transparent}
+.swatches button.on{border-color:var(--fg)}
+.timer{font-family:var(--f-display);font-size:2.2rem;font-weight:700;color:var(--p-school);text-shadow:0 0 14px rgba(160,123,255,.35)}
+#bgfx{display:none}
+.g0{background:var(--t-e)}.g1{background:var(--t-d)}.g2{background:var(--t-c)}.g3{background:var(--t-b)}.g4{background:var(--t-a)}.g5{background:var(--t-s)}.g6{background:var(--t-ss)}
+.g7{background:conic-gradient(from 0deg,var(--t-s),var(--t-ss),var(--t-a),var(--t-b),var(--t-s))}
+.hex[data-l="2"]{font-size:1rem}.hex.sm[data-l="2"]{font-size:.66rem}.hex.xs[data-l="2"]{font-size:.55rem}
+.gname{display:none}
+.vkanji{display:none}
+</style>
 
 <canvas id="bgfx" aria-hidden="true"></canvas>
 <div class="app" id="app"></div>
@@ -314,12 +603,28 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;background:var(--f
 (function(){
 "use strict";
 // ================= constants =================
-const TIERS=['Grade 5','Grade 4','Grade 3','Semi-Grade 2','Grade 2','Semi-Grade 1','Grade 1','Special Grade'];
-const KANJI=['五級','四級','三級','準二','二級','準一','一級','特級'];
-const TIER_TITLES={'Grade 5':'Initiate','Grade 4':'Apprentice','Grade 3':'Sorcerer','Semi-Grade 2':'Adept','Grade 2':'Veteran','Semi-Grade 1':'Elite','Grade 1':'Master','Special Grade':'Calamity'};
-// quest/task difficulty keeps its stored letters; shown as grades
-const DLAB={E:'Grade 4',D:'Grade 3',C:'Grade 2',B:'Semi-Grade 1',A:'Grade 1',S:'Special Grade'};
-const DSHORT={E:'4',D:'3',C:'2',B:'準1',A:'1',S:'特'};
+// Two styles share the same 8-step ladder; only names, badges and look change.
+const STYLES={
+  sorcerer:{label:'Sorcerer',tiers:['Grade 5','Grade 4','Grade 3','Semi-Grade 2','Grade 2','Semi-Grade 1','Grade 1','Special Grade'],
+    badge:['五級','四級','三級','準二','二級','準一','一級','特級'],
+    titles:['Initiate','Apprentice','Sorcerer','Adept','Veteran','Elite','Master','Calamity'],
+    dlab:{E:'Grade 4',D:'Grade 3',C:'Grade 2',B:'Semi-Grade 1',A:'Grade 1',S:'Special Grade'},dshort:{E:'4',D:'3',C:'2',B:'準1',A:'1',S:'特'},
+    person:'Sorcerer',tag:'昇級 · ASCENSION',notice:'【通知】 Notice',promo:'Promotion',rankName:i=>STYLES.sorcerer.tiers[i]+' Sorcerer',rankLabel:t=>t},
+  system:{label:'System',tiers:['E','D','C','B','A','S','SS','SS+'],
+    badge:['E','D','C','B','A','S','SS','SS+'],
+    titles:['Awakened','Initiate','Hunter','Veteran','Elite','Vanguard','Paragon','Transcendent'],
+    dlab:{E:'Rank E',D:'Rank D',C:'Rank C',B:'Rank B',A:'Rank A',S:'Rank S'},dshort:{E:'E',D:'D',C:'C',B:'B',A:'A',S:'S'},
+    person:'Hunter',tag:'[ ASCENSION SYSTEM ]',notice:'[ System ]',promo:'Rank up',rankName:i=>STYLES.system.tiers[i]+'-Rank Hunter',rankLabel:t=>'Rank '+t}
+};
+let ST,TIERS,KANJI,TIER_TITLES,DLAB,DSHORT;
+function applyStyle(name){
+  ST=STYLES[name]||STYLES.sorcerer;TIERS=ST.tiers;KANJI=ST.badge;DLAB=ST.dlab;DSHORT=ST.dshort;
+  TIER_TITLES=Object.fromEntries(TIERS.map((t,i)=>[t,ST.titles[i]]));
+  const on=ST===STYLES.system;
+  const a=document.getElementById('css-sorcerer'),b=document.getElementById('css-system');
+  if(a)a.media=on?'not all':'all';if(b)b.media=on?'all':'not all';
+  document.documentElement.dataset.style=on?'system':'sorcerer';
+}
 const STATS=['STR','AGI','VIT','INT','WIL'];
 const STAT_NAMES={STR:'Strength',AGI:'Agility',VIT:'Vitality',INT:'Intellect',WIL:'Willpower'};
 const PHYS=['STR','AGI','VIT'];
@@ -362,6 +667,7 @@ const ICON={
   dots:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>',
   flame:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-5 1-8.5z"/></svg>',
   trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+  swap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>',
   trophy:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 3h10v3h3v2a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v3H8v-3h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V6h3zm0 5V8H6a2 2 0 0 0 1 1.7zm10 0v1.7A2 2 0 0 0 18 8z"/></svg>'
 };
 
@@ -380,7 +686,7 @@ const r1=n=>Math.round(n*10)/10;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const fmtN=n=>Math.round(n).toLocaleString();
 const tierCls=t=>'g'+Math.max(0,TIERS.indexOf(t));
-const hex=(t,size)=>{const i=Math.max(0,TIERS.indexOf(t));let k=KANJI[i];if(size==='xs'&&k.charAt(0)!=='準')k=k.charAt(0);return `<div class="hex ${size||''} g${i}" data-l="${size&&k.length>1?2:1}" role="img" aria-label="${esc(t)}" title="${esc(t)}">${esc(k)}</div>`};
+const hex=(t,size)=>{const i=Math.max(0,TIERS.indexOf(t));let k=KANJI[i];if(size==='xs'&&ST===STYLES.sorcerer&&k.charAt(0)!=='準')k=k.charAt(0);return `<div class="hex ${size||''} g${i}" data-l="${size&&k.length>1?2:1}" role="img" aria-label="${esc(t)}" title="${esc(t)}">${esc(k)}</div>`};
 const fmtMin=m=>{const s=Math.round(m*60);return Math.floor(s/60)+':'+pad(s%60)};
 const fmtDur=m=>m>=60?Math.floor(m/60)+'h '+(Math.round(m%60)?Math.round(m%60)+'m':''):Math.round(m)+'m';
 const shortDate=k=>parseKey(k).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
@@ -398,7 +704,7 @@ function defaults(){
     quests:[Q('Push-ups','C','STR',100,'reps',10),Q('Sit-ups','C','STR',100,'reps',10),Q('Squats','C','STR',100,'reps',10),Q('Running','B','AGI',10,'km',1),Object.assign(Q('Read','D','INT',20,'pages',5),{skill:'sk_read'})],
     classes:[{id:'c_example',name:'Example class',color:CLASS_COLORS[0]}],
     tasks:[{id:uid(),title:'Example: Problem set 4',cls:'c_example',type:'Homework',due:addDays(t,2),diff:'C',done:false}],
-    bm:{},hist:{},timer:null,bsLast:'',bsCount:0,created:t,dismissed:'',updatedAt:0};
+    style:'sorcerer',bm:{},hist:{},timer:null,bsLast:'',bsCount:0,created:t,dismissed:'',updatedAt:0};
 }
 function normalize(s){
   const d=defaults();
@@ -414,6 +720,7 @@ function normalize(s){
 let S=normalize((()=>{try{return JSON.parse(lsGet('ascension-state'))}catch(e){return null}})()||defaults());
 let CC=null;
 const C=()=>CC||(CC=compute());
+applyStyle(S.style);
 
 // ================= persistence =================
 let docRef=null,syncState='local',writing=false,pending=false,saveTimer=null;
@@ -441,7 +748,7 @@ async function flush(){
 }
 function setSync(s){syncState=s;const el=$('#syncline');if(el)el.textContent=syncText()}
 function syncText(){return {local:'Saved on this device',cloud:'Synced to your account',error:'Sync failed. Progress is saved on this device.',loading:'Connecting to your account…'}[syncState]}
-function adopt(remote){S=normalize(remote);CC=null;lsSet('ascension-state',JSON.stringify(S));render()}
+function adopt(remote){S=normalize(remote);applyStyle(S.style);CC=null;lsSet('ascension-state',JSON.stringify(S));render()}
 async function connect(){
   if(!window.claude||!window.claude.use)return;
   setSync('loading');
@@ -517,7 +824,7 @@ function statTier(stat){
   return {t:ptsTier(R.pts[stat]),src:'earned'};
 }
 function overall(){const ts=STATS.map(s=>statTier(s).t);return ts.reduce((a,b)=>a+b,0)/ts.length}
-function autoTitle(){return TIER_TITLES[tierName(overall())]||'Sorcerer'}
+function autoTitle(){return TIER_TITLES[tierName(overall())]||ST.person}
 function pathInfo(p){const R=C(),li=levelInfo(R.xp[p]);const tf=ladderFloat(li.L+li.rem/li.need,LVL_T,false);return {xp:R.xp[p],li,tf,tier:tierName(tf),streak:R.streak[p]}}
 
 // ================= history / derived =================
@@ -601,10 +908,10 @@ const mult=s=>1+Math.min(s,50)*.01;
 function snap(){CC=null;return {lvl:levelInfo(C().total,needH).L,ov:tierName(overall()),st:Object.fromEntries(STATS.map(s=>[s,tierName(statTier(s).t)])),p:Object.fromEntries(PATHK.map(p=>[p,pathInfo(p)])),ach:achievements().filter(a=>a.ok).map(a=>a.id)}}
 function announce(b){
   const a=snap();
-  if(a.lvl>b.lvl)sys('Level up',`Sorcerer level ${a.lvl} reached.`);
+  if(a.lvl>b.lvl)sys('Level up',`${ST.person} level ${a.lvl} reached.`);
   PATHK.forEach(p=>{if(a.p[p].li.L>b.p[p].li.L)sys(PATHS[p].full+' level up',`${PATHS[p].full} is now level ${a.p[p].li.L} (rank ${a.p[p].tier}).`)});
-  if(TIERS.indexOf(a.ov)>TIERS.indexOf(b.ov))sys('Promotion',`You are now ${a.ov}. Title: ${autoTitle()}.`);
-  STATS.forEach(s=>{if(TIERS.indexOf(a.st[s])>TIERS.indexOf(b.st[s]))sys(STAT_NAMES[s]+' increased',`${s} rank is now ${a.st[s]}.`)});
+  if(TIERS.indexOf(a.ov)>TIERS.indexOf(b.ov))sys(ST.promo,`You are now ${ST.rankLabel(a.ov)}. Title: ${autoTitle()}.`);
+  STATS.forEach(s=>{if(TIERS.indexOf(a.st[s])>TIERS.indexOf(b.st[s]))sys(STAT_NAMES[s]+' increased',`${s} is now ${ST.rankLabel(a.st[s])}.`)});
   achievements().filter(x=>x.ok&&!b.ach.includes(x.id)).forEach(x=>sys('Achievement unlocked',`${x.name}: ${x.desc}`));
 }
 function commit(fn){const b=snap();fn();save();announce(b);render()}
@@ -759,11 +1066,11 @@ function achievements(){
     ['study10','Scholar','10 hours of study logged',R.cnt.studyMin>=600],
     ['study50','Sage','50 hours of study logged',R.cnt.studyMin>=3000],
     ['tasks25','Deadline Slayer','25 tasks finished on time',R.cnt.tasksOnTime>=25],
-    ['lv10','Level 10','Reach sorcerer level 10',li>=10],
-    ['lv25','Level 25','Reach sorcerer level 25',li>=25],
-    ['rankC','Grade 2 Sorcerer','Reach Grade 2 overall',ov>=4],
-    ['rankS','Grade 1 Sorcerer','Reach Grade 1 overall',ov>=6],
-    ['rankSp','Special Grade','Reach Special Grade overall',ov>=7]
+    ['lv10','Level 10','Reach level 10',li>=10],
+    ['lv25','Level 25','Reach level 25',li>=25],
+    ['rankC',ST.rankName(4),`Reach ${ST.rankLabel(TIERS[4])} overall`,ov>=4],
+    ['rankS',ST.rankName(6),`Reach ${ST.rankLabel(TIERS[6])} overall`,ov>=6],
+    ['rankSp',ST.rankName(7),`Reach ${ST.rankLabel(TIERS[7])} overall`,ov>=7]
   ];
   return list.map(([id,name,desc,ok])=>({id,name,desc,ok}));
 }
@@ -771,7 +1078,7 @@ function achievements(){
 // ================= system popups =================
 function sys(title,body){
   const box=$('#sys');const el=document.createElement('div');el.className='sysmsg';
-  el.innerHTML='<div class="lbl">【通知】 Notice</div><b></b><p></p>';
+  el.innerHTML='<div class="lbl"></div><b></b><p></p>';el.querySelector('.lbl').textContent=ST.notice;
   el.querySelector('b').textContent=title;el.querySelector('p').textContent=body;
   box.appendChild(el);while(box.children.length>3)box.firstChild.remove();
   setTimeout(()=>el.remove(),4500);
@@ -819,7 +1126,7 @@ let sub={train:'log',fuel:'today',school:'tasks'};
 let selDate=today(),calMonth=today().slice(0,7),calSel=today(),ladderKey='bench',foodMeal='',woType='strength',exRows=null,classColor=CLASS_COLORS[1];
 
 // ================= shared pieces =================
-function topbar(title){const ini=(S.name||'H').trim().charAt(0).toUpperCase()||'H';return `<div class="topbar"><div><div class="sys-tag">昇級 · ASCENSION</div><h2>${esc(title)}</h2></div><button class="avatar-btn" data-act="tab" data-k="profile" aria-label="Open profile"><i>${esc(ini)}</i>${esc(S.name||'Sorcerer')}</button></div>`}
+function topbar(title){const ini=(S.name||'H').trim().charAt(0).toUpperCase()||'H';return `<div class="topbar"><div><div class="sys-tag">${esc(ST.tag)}</div><h2>${esc(title)}</h2></div><div class="row" style="gap:8px"><button class="icon-btn" data-act="style" data-v="${ST===STYLES.system?'sorcerer':'system'}" aria-label="Switch to ${ST===STYLES.system?'Sorcerer':'System'} style" title="Switch style">${ICON.swap}</button><button class="avatar-btn" data-act="tab" data-k="profile" aria-label="Open profile"><i>${esc(ini)}</i>${esc(S.name||ST.person)}</button></div></div>`}
 function dateBar(){
   const t=today();
   return `<div class="datebar"><button class="btn sm" data-act="dshift" data-d="-1" aria-label="Previous day">‹</button><input type="date" id="seldate" value="${selDate}" max="${t}" aria-label="Date"><button class="btn sm" data-act="dshift" data-d="1" aria-label="Next day" ${selDate>=t?'disabled':''}>›</button>${selDate!==t?'<button class="btn sm ghost" data-act="dtoday">Back to today</button>':'<span class="note">Today</span>'}</div>`;
@@ -844,7 +1151,7 @@ function hunterCard(){
   const ini=(S.name||'H').trim().charAt(0).toUpperCase()||'H';
   return `<section class="win bracket hunter">
     <div class="emblem" aria-hidden="true"><div class="ring"></div><div class="ring2"></div><div class="core">${esc(ini)}</div></div>
-    <div style="min-width:0"><div class="hname">${esc(S.name||'Sorcerer')}</div><div class="htitle">${esc(S.title||autoTitle())}</div><div class="streak num">${ICON.flame}${st} Day${st===1?'':'s'}</div></div>
+    <div style="min-width:0"><div class="hname">${esc(S.name||ST.person)}</div><div class="htitle">${esc(S.title||autoTitle())}</div><div class="streak num">${ICON.flame}${st} Day${st===1?'':'s'}</div></div>
     <div class="rankbox">${hex(ov)}<div class="gname">${esc(ov)}</div><div class="lbl num">Level ${li.L}</div></div>
     <div style="grid-column:1/-1"><div class="xpbar"><i style="width:${(li.rem/li.need*100).toFixed(1)}%"></i></div>
       <div class="xpline num"><span>${li.rem} / ${li.need} XP to Level ${li.L+1}</span><span>${fmtN(R.total)} total XP</span></div></div>
@@ -1121,16 +1428,16 @@ function radar(){
   const pt=(i,v)=>{const a=-Math.PI/2+i*2*Math.PI/n,r=R*v/max;return [cx+r*Math.cos(a),cy+r*Math.sin(a)]};
   const ring=v=>STATS.map((_,i)=>pt(i,v).map(x=>x.toFixed(1)).join(',')).join(' ');
   const vals=STATS.map(s=>Math.max(.3,statTier(s).t));let g='';
-  [[2,'G3'],[4,'G2'],[6,'G1'],[8,'']].forEach(([v,l])=>{g+=`<polygon points="${ring(v)}" fill="none" stroke="#3a3c55"/>`;if(l)g+=`<text x="${cx+3}" y="${(cy-R*v/max+11).toFixed(1)}" fill="#b4ada3" font-size="9" font-family="Zen Kaku Gothic New,sans-serif">${l}</text>`});
+  [[2,KANJI[2]],[4,KANJI[4]],[6,KANJI[6]],[8,'']].forEach(([v,l])=>{g+=`<polygon points="${ring(v)}" fill="none" stroke="#3a3c55"/>`;if(l)g+=`<text x="${cx+3}" y="${(cy-R*v/max+11).toFixed(1)}" fill="#b4ada3" font-size="9" font-family="Zen Kaku Gothic New,sans-serif">${l}</text>`});
   STATS.forEach((s,i)=>{const [x,y]=pt(i,max);g+=`<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#3a3c55"/>`;const [lx,ly]=pt(i,max+2.4);g+=`<text x="${lx.toFixed(1)}" y="${(ly+4).toFixed(1)}" text-anchor="middle" fill="#f1efe9" font-size="12" font-weight="700" font-family="Zen Kaku Gothic New,sans-serif">${s} ${KANJI[TIERS.indexOf(tierName(statTier(s).t))]}</text>`});
-  g+=`<polygon points="${vals.map((v,i)=>pt(i,v).map(x=>x.toFixed(1)).join(',')).join(' ')}" fill="rgba(224,40,63,.35)" stroke="#f5a623" stroke-width="2"/>`;
-  vals.forEach((v,i)=>{const [x,y]=pt(i,v);g+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" fill="#f5a623"/>`});
+  g+=`<polygon points="${vals.map((v,i)=>pt(i,v).map(x=>x.toFixed(1)).join(',')).join(' ')}" style="fill:var(--radar-fill,rgba(58,160,255,.25));stroke:var(--glow)" stroke-width="2"/>`;
+  vals.forEach((v,i)=>{const [x,y]=pt(i,v);g+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" style="fill:var(--glow)"/>`});
   return `<svg viewBox="0 0 300 285" role="img" aria-label="Attribute radar chart">${g}</svg>`;
 }
 function renderStats(){
   const R=C(),t=today(),ov=overall(),ovT=tierName(ov),li=levelInfo(R.total,needH);
   const statRows=STATS.map(s=>{const st=statTier(s),tn=tierName(st.t),next=TIERS[Math.floor(st.t)+1];
-    const src=st.src==='verified'?`From ${st.n} benchmark${st.n>1?'s':''}`:st.src==='provisional'?`Provisional (${R.pts[s]} pts). Log a benchmark to rank above Grade 3.`:`${R.pts[s]} pts earned`;
+    const src=st.src==='verified'?`From ${st.n} benchmark${st.n>1?'s':''}`:st.src==='provisional'?`Provisional (${R.pts[s]} pts). Log a benchmark to rank above ${TIERS[2]}.`:`${R.pts[s]} pts earned`;
     return `<div class="stat">${hex(tn,'sm')}<div style="min-width:0"><div class="sn">${s} <span class="note">· ${STAT_NAMES[s]}</span></div><div class="note">${esc(src)}</div><div class="mini"><i class="${tierCls(tn)}" style="width:${((st.t%1)*100).toFixed(0)}%"></i></div></div><div><div class="sv num">${statValue(st.t)}</div><div class="note" style="text-align:right">${next?'→ '+next:'Max'}</div></div></div>`}).join('');
   const paths=PATHK.map(p=>{const pi=pathInfo(p);return `<div class="pcard" style="--pc:${PATHS[p].col}">${hex(pi.tier)}<div style="min-width:0"><div class="row between wrap"><span class="pn">${PATHS[p].full}</span><span class="num" style="font-family:var(--f-display);font-weight:700">Lv ${pi.li.L}</span></div><div class="pbar" style="margin-top:6px"><i style="width:${(pi.li.rem/pi.li.need*100).toFixed(1)}%"></i></div><div class="ps num"><span><b>${fmtN(pi.xp)}</b> XP</span><span>${pi.li.need-pi.li.rem} to next level</span><span>Next rank at Lv ${LVL_T[Math.min(13,Math.floor(pi.tf)+1)]}</span></div></div></div>`}).join('');
   const sRows=[['Daily quests','daily','days'],['Training target','train','weeks'],['Calorie target','fuel','days'],['Studying','school','days'],['Any activity','active','days']].map(([l,k,u])=>`<tr><td>${l}</td><td class="num">${R.streak[k].cur} ${u}</td><td class="num">${R.streak[k].best} ${u}</td></tr>`).join('');
@@ -1146,7 +1453,7 @@ function renderStats(){
   const ach=achievements(),got=ach.filter(a=>a.ok).length;
   const c=R.cnt;
   return `${topbar('Stats')}
-  <section class="win bracket radarwrap"><div>${radar()}</div><div class="overall">${hex(ovT)}<div class="big num">${statValue(ov)}</div><div class="lbl">Overall ${esc(ovT)}</div><div class="note">${esc(S.title||autoTitle())} · Level ${li.L}</div><div class="note num">${fmtN(R.total)} total XP</div></div></section>
+  <section class="win bracket radarwrap"><div>${radar()}</div><div class="overall">${hex(ovT)}<div class="big num">${statValue(ov)}</div><div class="lbl">Overall ${esc(ST.rankLabel(ovT))}</div><div class="note">${esc(S.title||autoTitle())} · Level ${li.L}</div><div class="note num">${fmtN(R.total)} total XP</div></div></section>
   <section class="stack"><h3>Paths</h3>${paths}<p class="note">Each path levels on its own XP. Path ranks: ${LVL_T.map((l,i)=>`${TIERS[i]} Lv ${l}`).join(' · ')}.</p></section>
   <section class="win"><h3>Attributes</h3>${statRows}<p class="note">STR, AGI and VIT come from real benchmarks scaled to your bodyweight. INT and WIL come from points earned by studying, tasks, quests and streaks.</p></section>
   <section class="win"><h3>Streaks</h3><div style="overflow-x:auto"><table class="st"><thead><tr><th>Streak</th><th>Current</th><th>Best</th></tr></thead><tbody>${sRows}</tbody></table></div></section>
@@ -1163,13 +1470,16 @@ function renderStats(){
 function renderProfile(){
   return `${topbar('Profile')}
   <form class="win form" data-form="profile" autocomplete="off">
-    <div class="field"><label for="pf_name">Sorcerer name</label><input id="pf_name" name="name" value="${esc(S.name)}" maxlength="30"></div>
+    <div class="field"><label for="pf_name">Name</label><input id="pf_name" name="name" value="${esc(S.name)}" maxlength="30"></div>
     <div class="field"><label for="pf_title">Title (blank = earned)</label><input id="pf_title" name="title" value="${esc(S.title)}" placeholder="${esc(autoTitle())}" maxlength="40"></div>
     <div class="field"><label for="pf_unit">Units</label><select id="pf_unit" name="unit"><option value="kg" ${S.unit==='kg'?'selected':''}>Kilograms</option><option value="lb" ${S.unit==='lb'?'selected':''}>Pounds</option></select></div>
     <div class="field"><label for="pf_sex">Strength standards</label><select id="pf_sex" name="sex"><option value="m" ${S.sex==='m'?'selected':''}>Male</option><option value="f" ${S.sex==='f'?'selected':''}>Female</option></select></div>
     <div class="full row between wrap"><span class="note">Age, height, weight and activity are on Nutrition → Goal.</span><button class="btn pri" type="submit">Save profile</button></div></form>
+  <section class="win stack"><h3>Style</h3>
+    <div class="seg" role="group" aria-label="App style">${Object.entries(STYLES).map(([k,v])=>`<button type="button" data-act="style" data-v="${k}" class="${ST===v?'on':''}" aria-pressed="${ST===v}">${v.label}</button>`).join('')}</div>
+    <p class="note">System: blue status window with ranks E to SS+. Sorcerer: crimson ink with Grade 5 to Special Grade. Your progress is the same in both.</p></section>
   <section class="win stack"><h3>Rank scale</h3><div class="row wrap" style="gap:8px">${TIERS.map(t=>hex(t,'sm')).join('')}</div>
-    <p class="note">Your overall grade is the average of your five attributes. Titles: ${Object.entries(TIER_TITLES).map(([k,v])=>`${k} ${v}`).join(' · ')}.</p></section>
+    <p class="note">Your overall ${ST===STYLES.system?'rank':'grade'} is the average of your five attributes. Titles: ${Object.entries(TIER_TITLES).map(([k,v])=>`${k} ${v}`).join(' · ')}.</p></section>
   <section class="win stack"><h3>Backup</h3><p class="note">${esc(syncText())}. Copy this to move your data between devices or keep a spare.</p>
     <textarea id="backup" aria-label="Backup data">${esc(JSON.stringify(S))}</textarea>
     <div class="row wrap"><button class="btn" data-act="copy">Copy backup</button><button class="btn" data-act="restore">Restore from box</button><span class="grow"></span><button class="btn danger" data-act="resetask">Reset all progress</button></div>
@@ -1221,6 +1531,7 @@ document.addEventListener('click',e=>{
   if(act==='close'&&e.target!==el&&!el.classList.contains('icon-btn'))return;
   switch(act){
     case 'tab':setTab(el.dataset.k);break;
+    case 'style':{const was=ST.person;S.style=el.dataset.v;applyStyle(S.style);if(!S.name||S.name===was)S.name=ST.person}save();drawBg();render();break;
     case 'sub':sub[el.dataset.g]=el.dataset.k;render();break;
     case 'goto':selDate=calSel;setTab(el.dataset.k);if(el.dataset.k==='school'){sub.school='study';render()}break;
     case 'dshift':{const n=addDays(selDate,+el.dataset.d);if(n<=today()){selDate=n;render()}break}
@@ -1259,7 +1570,7 @@ document.addEventListener('click',e=>{
     case 'calm':{const [y,m]=calMonth.split('-').map(Number);const d=new Date(y,m-1+Number(el.dataset.d),1);calMonth=d.getFullYear()+'-'+pad(d.getMonth()+1);render();break}
     case 'calday':calSel=el.dataset.k;if(calSel.slice(0,7)!==calMonth)calMonth=calSel.slice(0,7);render();break;
     case 'copy':{const ta=$('#backup');try{navigator.clipboard.writeText(ta.value).then(()=>sys('Copied','Backup copied to your clipboard.'),()=>{ta.select();sys('Select all','Copy the selected text manually.')})}catch(_){ta.select()}break}
-    case 'restore':{try{const d=JSON.parse($('#backup').value);if(!d||!Array.isArray(d.quests))throw 0;S=normalize(d);save();render();sys('Restored','Backup loaded.')}catch(_){sys('Restore failed','The box does not contain a valid backup. Copy a full backup and try again.')}break}
+    case 'restore':{try{const d=JSON.parse($('#backup').value);if(!d||!Array.isArray(d.quests))throw 0;S=normalize(d);applyStyle(S.style);save();render();sys('Restored','Backup loaded.')}catch(_){sys('Restore failed','The box does not contain a valid backup. Copy a full backup and try again.')}break}
     case 'resetask':$('#resetconfirm').hidden=false;break;
     case 'resetno':$('#resetconfirm').hidden=true;break;
     case 'resetyes':S=defaults();save();render();sys('Reset','All progress erased.');break;
@@ -1313,7 +1624,7 @@ document.addEventListener('submit',e=>{
   if(kind==='class'){const name=String(fd.get('name')||'').trim();if(!name)return;S.classes.push({id:'c_'+uid(),name,color:classColor});save();render();return}
   if(kind==='skill'){const name=String(fd.get('name')||'').trim();if(!name)return;S.skills.push({id:'sk_'+uid(),name,stat:fd.get('sk_stat')||'INT'});save();render();return}
   if(kind==='bspass'){const p=String(fd.get('pass')||'');if(p.length<8){bsStatus='Use a passphrase of at least 8 characters.';render();return}lsSet(PASS_KEY,p);bsStatus='Passphrase saved on this device.';render();bsSync(true);return}
-  if(kind==='profile'){commit(()=>{S.name=String(fd.get('name')||'').trim()||'Sorcerer';S.title=String(fd.get('title')||'').trim();S.unit=fd.get('unit')==='lb'?'lb':'kg';S.sex=fd.get('sex')==='f'?'f':'m'});sys('Profile saved','Your settings are updated.')}
+  if(kind==='profile'){commit(()=>{S.name=String(fd.get('name')||'').trim()||ST.person;S.title=String(fd.get('title')||'').trim();S.unit=fd.get('unit')==='lb'?'lb':'kg';S.sex=fd.get('sex')==='f'?'f':'m'});sys('Profile saved','Your settings are updated.')}
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').hidden)closeModal()});
 window.addEventListener('hashchange',()=>{const k=location.hash.slice(1);if(TABS.includes(k)&&k!==tab){tab=k;render()}});
