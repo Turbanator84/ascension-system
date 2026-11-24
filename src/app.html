@@ -1,7 +1,7 @@
 <title>Ascension System</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Share+Tech+Mono&family=Barlow:wght@400;500;600&display=swap">
 <style>
 /* Layout: one phone-width column of glowing "system window" panels, fixed bottom tab bar. Single dark theme by choice. */
 :root{
@@ -284,6 +284,133 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;background:var(--f
 .swatches button{width:26px;height:26px;border-radius:50%;border:2px solid transparent}
 .swatches button.on{border-color:var(--fg)}
 .timer{font-family:var(--f-display);font-size:2.2rem;font-weight:700;color:var(--p-school);text-shadow:0 0 14px rgba(160,123,255,.35)}
+
+/* ================= Core theme: dark grid HUD, chamfered panels, outlined hexes ================= */
+:root{
+  --bg:#04070b; --panel2:#0c131b; --field:#060b11; --well:#0a1118; --tile:rgba(9,14,20,.86);
+  --line:#1f2c38; --line-hi:#3a4d5f; --glow:#2f8cff; --glow-soft:rgba(47,140,255,.15);
+  --fg:#e4ebf2; --muted:#7a8897; --dim:#4b5866; --good:#3ddc84;
+  --f-mono:"Share Tech Mono",ui-monospace,Menlo,monospace;
+  --cut:14px;
+}
+body{background:radial-gradient(90% 55% at 50% 18%,#0c1a26 0%,transparent 70%),radial-gradient(70% 40% at 50% 100%,#08121c 0%,transparent 70%),var(--bg);background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(rgba(120,160,200,.045) 1px,transparent 1px) 0 0/44px 44px,linear-gradient(90deg,rgba(120,160,200,.045) 1px,transparent 1px) 0 0/44px 44px;
+  -webkit-mask-image:radial-gradient(80% 70% at 50% 35%,#000 30%,transparent 100%);mask-image:radial-gradient(80% 70% at 50% 35%,#000 30%,transparent 100%)}
+
+/* labels: monospace, wide tracking */
+.lbl,h3,.field label,.flabel,.topbar .sys-tag,.htitle,table.st th,.cal .dh,.daydet h4,details summary{font-family:var(--f-mono);font-weight:400;letter-spacing:.18em}
+h3{color:var(--muted);font-size:.8rem}
+.lbl{font-size:.7rem}
+.topbar .sys-tag{color:var(--muted);font-size:.68rem;letter-spacing:.3em}
+h2{letter-spacing:.14em}
+
+/* panels: chamfered corners with drawn diagonals */
+.win{--acc:var(--line-hi);--seg:0px;--thk:1px;border-radius:0;border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(13,20,28,.9),rgba(7,11,16,.92));box-shadow:none;
+  clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut))}
+.win::before,.win::after,.win.bracket::before,.win.bracket::after{content:"";position:absolute;width:calc(var(--cut) + var(--seg));height:calc(var(--cut) + var(--seg));border:0;border-radius:0;opacity:1;pointer-events:none}
+.win::before,.win.bracket::before{top:-1px;left:-1px;right:auto;bottom:auto;background:
+  linear-gradient(var(--acc),var(--acc)) var(--cut) 0/var(--seg) var(--thk) no-repeat,
+  linear-gradient(var(--acc),var(--acc)) 0 var(--cut)/var(--thk) var(--seg) no-repeat,
+  linear-gradient(to top left,transparent calc(50% - var(--thk)*.75),var(--acc) 50%,transparent calc(50% + var(--thk)*.75)) 0 0/var(--cut) var(--cut) no-repeat}
+.win::after,.win.bracket::after{bottom:-1px;right:-1px;top:auto;left:auto;background:
+  linear-gradient(var(--acc),var(--acc)) right var(--cut) bottom 0/var(--seg) var(--thk) no-repeat,
+  linear-gradient(var(--acc),var(--acc)) right 0 bottom var(--cut)/var(--thk) var(--seg) no-repeat,
+  linear-gradient(to bottom right,transparent calc(50% - var(--thk)*.75),var(--acc) 50%,transparent calc(50% + var(--thk)*.75)) right 0 bottom 0/var(--cut) var(--cut) no-repeat}
+.win.bracket{--acc:var(--glow);--seg:26px;--thk:2px}
+.banner{--acc:#ff5468;border-color:#5a1e2a;background:linear-gradient(180deg,#1c0a10,#10070b)}
+.overlay .win{background:#080d13}
+
+/* outlined hexes */
+.hex{position:relative;isolation:isolate;--c:var(--line-hi);background:var(--c);color:var(--c);text-shadow:0 0 10px color-mix(in srgb,var(--c) 70%,transparent);font-weight:700}
+.hex::before{content:"";position:absolute;inset:2px;z-index:-1;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--c) 22%,#0b1118),#06090d 75%)}
+.hex.xs::before{inset:1.5px}
+.tE{--c:var(--t-e)}.tD{--c:var(--t-d)}.tC{--c:var(--t-c)}.tB{--c:var(--t-b)}.tA{--c:var(--t-a)}.tS{--c:var(--t-s)}.tSS{--c:var(--t-ss)}
+.tSSp{--c:#ffd36b;background:conic-gradient(from 0deg,var(--t-s),var(--t-ss),var(--t-a),var(--t-b),var(--t-s))}
+.hex.none{--c:var(--line-hi);background:var(--c)}
+
+/* bars and controls */
+.xpbar{height:4px;border-radius:0;background:#0b141d;border:0}
+.xpbar i{background:linear-gradient(90deg,#1c5fd6,var(--glow));box-shadow:0 0 8px var(--glow)}
+.pbar,.mini,.qbar{border-radius:0;height:3px}
+.btn{border-radius:3px;font-family:var(--f-mono);font-weight:400;letter-spacing:.14em;text-transform:uppercase;font-size:.75rem;background:#0b121a;border-color:var(--line-hi)}
+input,select,textarea{border-radius:3px;border-color:var(--line)}
+.check{border-radius:3px;border:1.5px solid var(--line-hi)}
+.check.on{background:var(--glow);border-color:var(--glow)}
+.avatar-btn{border-radius:3px;background:#0b121a;font-family:var(--f-mono);letter-spacing:.1em}
+.avatar-btn i{border-radius:0;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:var(--line-hi);position:relative;isolation:isolate;color:var(--fg)}
+.avatar-btn i::before{content:"";position:absolute;inset:1.5px;z-index:-1;clip-path:inherit;background:#0a1017}
+.subtabs,.seg,.days{display:flex;gap:2px;flex-wrap:wrap;padding:3px;border:1px solid var(--line);border-radius:999px;background:rgba(6,10,15,.8);width:fit-content;max-width:100%}
+.seg{width:100%}
+.subtabs button,.seg button,.days button{border:1px solid transparent;border-radius:999px;background:transparent;font-family:var(--f-mono);font-weight:400;letter-spacing:.16em;text-transform:uppercase;font-size:.72rem;color:var(--muted)}
+.subtabs button.on,.seg button.on,.days button.on{border-color:var(--line-hi);background:#111b26;color:var(--fg);box-shadow:inset 0 0 12px rgba(47,140,255,.12)}
+.qchips button{border-radius:3px}
+
+/* tiles and list items: square, thin lines */
+.ptile,.sk,.item,.kv div,.rung,.ach div,.pcard,.cal button,.empty,.water span,.week i{border-radius:2px}
+.ptile,.sk,.item,.pcard{background:var(--tile)}
+.ptile .pt-name,.pcard .pn{letter-spacing:.14em}
+.rung.me{border-color:var(--good);background:rgba(61,220,132,.06);box-shadow:0 0 12px rgba(61,220,132,.15)}
+.cal button.sel{background:#101c2a;border-color:var(--glow)}
+.qname{color:var(--fg);letter-spacing:.1em}
+.qxp{color:var(--glow)}
+.streak{border-radius:3px}
+.sysmsg{border-radius:0;background:rgba(6,10,15,.97);border-color:var(--glow);clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+.rec,.stat,table.st th,table.st td{border-bottom-color:rgba(58,77,95,.35)}
+
+/* bottom tab bar */
+nav.tabs{background:rgba(4,7,11,.94);border-top:1px solid var(--line)}
+nav.tabs button{position:relative;font-family:var(--f-mono);letter-spacing:.12em;text-transform:uppercase;font-size:.6rem}
+nav.tabs button.on{color:var(--fg)}
+nav.tabs button.on svg{color:var(--glow);filter:drop-shadow(0 0 6px rgba(47,140,255,.7))}
+nav.tabs button.on::before{content:"";position:absolute;top:-1px;left:28%;right:28%;height:2px;background:var(--glow);box-shadow:0 0 8px var(--glow)}
+
+/* core wheel (home) */
+.corecard{padding:14px 14px 16px;display:flex;flex-direction:column;gap:6px}
+.cw-head{display:flex;justify-content:space-between;gap:10px;font-family:var(--f-mono);font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
+.cw-head span:first-child{color:var(--glow)}
+.cw-head span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cw{position:relative;width:min(100%,340px);aspect-ratio:1;margin:0 auto}
+.cw svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.cw-grid line{stroke:rgba(120,160,200,.08);stroke-width:.25}
+.cw-faint{fill:none;stroke:rgba(120,160,200,.16);stroke-width:.3}
+.cw-dash{fill:none;stroke:rgba(120,160,200,.22);stroke-width:.35;stroke-dasharray:.6 1.6;transform-origin:50px 50px;animation:spin 60s linear infinite}
+.cw-track{fill:none;stroke:rgba(47,140,255,.12);stroke-width:2.2}
+.cw-arc{fill:none;stroke:var(--glow);stroke-width:2.2;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50px 50px;filter:drop-shadow(0 0 1.5px var(--glow)) drop-shadow(0 0 4px rgba(47,140,255,.6))}
+.cw-hexline{fill:rgba(120,160,200,.03);stroke:rgba(120,160,200,.14);stroke-width:.35}
+.cw-center{position:absolute;inset:0;display:grid;place-items:center}
+.hex.xl{width:23%;height:auto;aspect-ratio:58/64;font-size:clamp(1.3rem,7vw,2rem);color:#f1f5f9;--c:#8b98a7}
+.hex.xl::before{background:radial-gradient(circle at 50% 35%,#5a6572,#2a323c 80%)}
+.cw-node{position:absolute;transform:translate(-50%,-38%);display:flex;flex-direction:column;align-items:center;gap:4px}
+.cw-node .hex{font-size:.85rem}
+.cw-node span{font-family:var(--f-mono);font-size:.62rem;letter-spacing:.12em;color:var(--muted);white-space:nowrap}
+.cw-node.lock .hex{--c:#34404c;color:#56636f;text-shadow:none}
+.cw-node.lock span{color:var(--dim)}
+.cw-node.lit .hex{--c:var(--glow)}
+.cw-node.me .hex{--c:var(--good);filter:drop-shadow(0 0 8px rgba(61,220,132,.55))}
+.cw-node.me span{color:var(--good)}
+.cw-sync{text-align:center;font-family:var(--f-mono);letter-spacing:.24em;text-transform:uppercase;font-size:.78rem;color:var(--glow);text-shadow:0 0 10px rgba(47,140,255,.5);margin:4px 0 10px}
+.cw-sync b{font-weight:400;color:#7fb8ff}
+.cw-sync span{color:var(--muted);text-shadow:none;letter-spacing:.14em;font-size:.68rem}
+.desig{position:relative;border:1px solid var(--line-hi);padding:18px 14px 12px;background:linear-gradient(180deg,rgba(14,20,28,.95),rgba(8,12,17,.95));clip-path:polygon(18px 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%,0 18px)}
+.desig::before{content:"";position:absolute;top:-1px;left:-1px;width:19px;height:19px;background:linear-gradient(to top left,transparent calc(50% - 1px),var(--fg) 50%,transparent calc(50% + 1px));opacity:.6}
+.desig::after{content:"";position:absolute;bottom:-1px;right:-1px;width:19px;height:19px;background:linear-gradient(to bottom right,transparent calc(50% - 1px),var(--line-hi) 50%,transparent calc(50% + 1px))}
+.desig-tab{position:absolute;top:0;left:50%;transform:translateX(-50%);font-family:var(--f-mono);font-size:.58rem;letter-spacing:.24em;text-transform:uppercase;color:var(--dim);padding:2px 12px;border:1px solid var(--line);border-top:0;background:#070b10;white-space:nowrap}
+.desig-top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center}
+.desig-emb{width:54px;height:54px;border-radius:50%;border:1px solid var(--line-hi);display:grid;place-items:center;box-shadow:inset 0 0 14px rgba(0,0,0,.6)}
+.desig-emb .hex{--c:#c9d2dc;color:#f1f5f9}
+.desig-rank{font-family:var(--f-display);font-weight:700;font-size:1.9rem;line-height:1.05;letter-spacing:.02em;text-transform:uppercase}
+.desig .htitle{font-size:.7rem;color:var(--muted);margin-top:2px}
+.desig-mult{text-align:right}
+.desig-mult b{font-family:var(--f-display);font-size:1.3rem}
+.desig-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0 12px;padding-top:10px;border-top:1px solid var(--line)}
+.desig-grid > div:nth-child(2){text-align:center}
+.desig-grid > div:nth-child(3){text-align:right}
+.desig-grid b{display:block;font-family:var(--f-mono);font-weight:400;font-size:.95rem;letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+.desig-grid .streak-n{display:inline-flex;align-items:center;gap:4px;color:#ffc53d}
+.desig-grid .streak-n svg{width:12px;height:12px}
+@media (prefers-reduced-motion:reduce){.cw-dash{animation:none}}
 </style>
 
 <div class="app" id="app"></div>
@@ -816,14 +943,44 @@ const delBtn=(act,id,label)=>`<button class="icon-btn" data-act="${act}" data-id
 
 // ================= HOME =================
 function hunterCard(){
-  const R=C(),li=levelInfo(R.total,needH),ov=tierName(overall()),st=R.streak.daily.cur;
+  const R=C(),li=levelInfo(R.total,needH),ovF=overall(),ov=tierName(ovF),st=R.streak.daily.cur;
   const ini=(S.name||'H').trim().charAt(0).toUpperCase()||'H';
-  return `<section class="win bracket hunter">
-    <div class="emblem" aria-hidden="true"><div class="ring"></div><div class="ring2"></div><div class="core">${esc(ini)}</div></div>
-    <div style="min-width:0"><div class="hname">${esc(S.name||'Hunter')}</div><div class="htitle">${esc(S.title||autoTitle())}</div><div class="streak num">${ICON.flame}${st} Day${st===1?'':'s'}</div></div>
-    <div class="rankbox">${hex(ov)}<div class="lbl num">Level ${li.L}</div></div>
-    <div style="grid-column:1/-1"><div class="xpbar"><i style="width:${(li.rem/li.need*100).toFixed(1)}%"></i></div>
-      <div class="xpline num"><span>${li.rem} / ${li.need} XP to Level ${li.L+1}</span><span>${fmtN(R.total)} total XP</span></div></div>
+  const BASE=['E','D','C','B','A','S'],cur=Math.min(5,Math.floor(Math.floor(ovF)/2));
+  const lvlPct=Math.round(li.rem/li.need*100),ti=TIERS.indexOf(ov),next=TIERS[ti+1];
+  const rankPct=next?Math.round((ovF-Math.floor(ovF))*100):100,xm=mult(st);
+  const nodes=BASE.map((b,i)=>{const a=i*Math.PI/3,x=50+40*Math.cos(a),y=50+40*Math.sin(a);
+    const cls=i===cur?'me':i<cur?'lit':'lock';
+    return `<div class="cw-node ${cls}" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%"><div class="hex sm">${b}</div><span class="num">PWR ${statValue(i*2)}</span></div>`}).join('');
+  return `<section class="win bracket corecard">
+    <div class="cw-head"><span>Core</span><span class="num">ID · ${esc(S.name||'Hunter')}</span></div>
+    <div class="cw" role="img" aria-label="Hunter rank ${esc(ov)}, level ${li.L}, ${lvlPct}% to level ${li.L+1}">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <g class="cw-grid"><line x1="0" y1="50" x2="100" y2="50"/><line x1="50" y1="0" x2="50" y2="100"/><line x1="15" y1="15" x2="85" y2="85"/><line x1="85" y1="15" x2="15" y2="85"/></g>
+        <circle class="cw-faint" cx="50" cy="50" r="33"/>
+        <circle class="cw-dash" cx="50" cy="50" r="24.5"/>
+        <circle class="cw-track" cx="50" cy="50" r="28.5"/>
+        <circle class="cw-arc" cx="50" cy="50" r="28.5" pathLength="100" stroke-dasharray="${Math.max(.5,lvlPct)} 100"/>
+        <polygon class="cw-hexline" points="50,30 67.3,40 67.3,60 50,70 32.7,60 32.7,40"/>
+      </svg>
+      <div class="cw-center"><div class="hex xl t${tierCls(ov)}">${esc(ov)}</div></div>
+      ${nodes}
+    </div>
+    <div class="cw-sync num">Sync status: <b>${lvlPct}%</b> <span>· Lv ${li.L} → ${li.L+1}</span></div>
+    <div class="desig">
+      <div class="desig-tab">Link.established</div>
+      <div class="desig-top">
+        <div class="desig-emb"><div class="hex sm">${esc(ini)}</div></div>
+        <div style="min-width:0"><div class="lbl">System designation</div><div class="desig-rank">${esc(ov)}-Rank</div><div class="htitle">${esc(S.title||autoTitle())}</div></div>
+        <div class="desig-mult"><div class="lbl">XP mult</div><b class="num">×${xm.toFixed(2).replace(/0$/,'')}</b></div>
+      </div>
+      <div class="desig-grid num">
+        <div><div class="lbl">Level</div><b>${li.L}</b></div>
+        <div><div class="lbl">Streak</div><b class="streak-n">${ICON.flame}${st}d</b></div>
+        <div><div class="lbl">${next?'Next rank':'Status'}</div><b>${next?`${esc(next)} · ${rankPct}%`:'Max'}</b></div>
+      </div>
+      <div class="xpbar"><i style="width:${lvlPct}%"></i></div>
+      <div class="xpline num"><span>${li.rem} / ${li.need} XP to Level ${li.L+1}</span><span>${fmtN(R.total)} total XP</span></div>
+    </div>
   </section>`;
 }
 function countdown(){const n=new Date(),m=new Date(n);m.setHours(24,0,0,0);const s=Math.floor((m-n)/1000);return pad(Math.floor(s/3600))+':'+pad(Math.floor(s%3600/60))+':'+pad(s%60)}
