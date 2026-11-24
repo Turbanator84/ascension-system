@@ -1,6 +1,6 @@
 # Ascension System
 
-A leveling-system habit tracker. Daily quests, training, nutrition and school each level up on their own, and five attributes (STR, AGI, VIT, INT, WIL) rank from **E** up to **SS+**.
+A leveling-system habit tracker. Daily quests, training, nutrition and school each level up on their own, and five attributes (STR, AGI, VIT, INT, WIL) are graded like sorcerers: **Grade 5 → Grade 4 → Grade 3 → Semi-Grade 2 → Grade 2 → Semi-Grade 1 → Grade 1 → Special Grade**.
 
 ## Tabs
 
@@ -15,7 +15,7 @@ A leveling-system habit tracker. Daily quests, training, nutrition and school ea
 
 ## How ranking works
 
-- **STR / AGI / VIT** come from real benchmarks (bench, squat, deadlift, overhead press, push-ups, pull-ups, 5K, mile, plank, resting heart rate). They're scaled to your bodyweight and sex. Until you log a benchmark, these stay provisional and can't go above C. Strength sets of 12 reps or fewer update your records automatically with an estimated one-rep max (Epley formula).
+- **STR / AGI / VIT** come from real benchmarks (bench, squat, deadlift, overhead press, push-ups, pull-ups, 5K, mile, plank, resting heart rate). They're scaled to your bodyweight and sex. Until you log a benchmark, these stay provisional and can't go above Grade 3. Strength sets of 12 reps or fewer update your records automatically with an estimated one-rep max (Epley formula).
 - **INT / WIL**, skills and classes rank from points earned by studying, finishing tasks, quests and streaks. Streaks multiply quest rewards by up to ×1.5.
 - **Paths** (Daily, Training, Nutrition, School) each have their own XP, level, rank and streak. Training streaks count weeks you hit your workout target.
 - **Nutrition targets** use Mifflin-St Jeor × activity level, ± about 7,700 kcal per kg of weekly change. Protein is set to 1.6–2.2 g per kg.
