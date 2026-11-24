@@ -28,8 +28,9 @@ Brightspace doesn't give students API access. Every account does have a private 
 2. In this repo, go to **Settings → Secrets and variables → Actions** and add:
    - `BRIGHTSPACE_ICS_URL`: the feed link
    - `SYNC_PASSPHRASE`: any long phrase
-3. Go to **Settings → Pages** and set **Source** to **GitHub Actions**.
-4. Open the Pages site, go to **School**, and enter the same passphrase.
+3. Open the app at https://turbanator84.github.io/ascension-system/, go to **School**, and enter the same passphrase.
+
+The workflow publishes the site to the `gh-pages` branch. If the site doesn't load, check **Settings → Pages** is serving the `gh-pages` branch from `/ (root)`.
 
 Every 3 hours, the workflow fetches your feed and encrypts it with your passphrase (AES-256-GCM). It then publishes the encrypted file next to the app. Your browser decrypts it and turns each assignment, quiz, test and discussion into a task under its course. Tests get review sessions 5 and 2 days before, and quizzes get one the day before. Re-syncing updates changed due dates without duplicating anything.
 
