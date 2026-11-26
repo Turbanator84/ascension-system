@@ -23,6 +23,10 @@ jobs:
         with:
           node-version: 20
       - run: node scripts/build.mjs
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
       - name: Sync Brightspace calendar
         run: node scripts/sync-brightspace.mjs
         env:
