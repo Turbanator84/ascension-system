@@ -591,11 +591,49 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;background:var(--f
 .gname{display:none}
 .vkanji{display:none}
 </style>
+<style id="css-shared">
+/* Pieces shared by both styles; colours come from each style's variables. */
+.undo{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:30;display:flex;align-items:center;gap:14px;background:var(--ink,var(--panel2));border:2px solid var(--glow);padding:8px 10px 8px 16px;box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:calc(100vw - 32px);font-size:.88rem}
+.undo span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bossbar{height:12px;background:var(--well);border:1px solid var(--line);overflow:hidden}
+.bossbar i{display:block;height:100%;background:linear-gradient(90deg,#ff3b4f,#ff8a3d);transition:width .4s}
+.boss.won .bossbar i{background:var(--good)}
+.goal{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;font-size:.84rem}
+.goal .mini{grid-column:1/-1;margin-top:0}
+.goal .mini i{background:var(--glow)}
+.goal.ok span:first-child{color:var(--good)}
+.shields{display:inline-flex;gap:3px;vertical-align:middle;margin-left:8px}
+.shields svg{width:15px;height:15px;color:var(--glow)}
+.shields svg.off{opacity:.25}
+.coins{display:inline-flex;align-items:center;gap:5px;font-weight:700;color:#ffc53d}
+.coins svg{width:16px;height:16px}
+.fcard{min-height:150px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:10px;padding:20px;border:2px dashed var(--line);background:var(--tile);font-size:1.05rem;overflow-wrap:anywhere}
+.fcard .ans{color:var(--good);font-weight:700}
+.plates{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.plates span{display:inline-flex;align-items:center;justify-content:center;min-width:34px;padding:2px 4px;font-weight:700;font-size:.78rem;border:2px solid var(--line);background:var(--field)}
+.rest{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rest .t{font-family:var(--f-display);font-size:1.6rem;min-width:70px}
+.rest.ding .t{color:var(--good)}
+.hint{font-size:.74rem;color:var(--good);margin:-2px 0 2px}
+.scan{position:relative;background:#000;aspect-ratio:4/3;overflow:hidden}
+.scan video{width:100%;height:100%;object-fit:cover}
+.scan::after{content:"";position:absolute;left:12%;right:12%;top:50%;height:2px;background:var(--bad);box-shadow:0 0 10px var(--bad)}
+.res{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px;border:2px solid var(--line);background:var(--tile);text-align:left;width:100%}
+.res small{display:block;color:var(--muted);font-size:.75rem}
+.lb{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:2px solid var(--line);background:var(--tile)}
+.lb.me{border-color:var(--glow)}
+.lb .pos{font-family:var(--f-display);font-size:1.1rem;text-align:center}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px 14px;font-size:.86rem;align-items:center}
+.cmp .up{color:var(--good)} .cmp .down{color:var(--bad)}
+.grade{font-family:var(--f-display);font-size:1.5rem}
+.rowbtns{display:flex;gap:6px;align-items:center}
+</style>
 
 <canvas id="bgfx" aria-hidden="true"></canvas>
 <div class="app" id="app"></div>
 <nav class="tabs" aria-label="Sections"><div class="in" id="nav"></div></nav>
 <div class="sys" id="sys" aria-live="polite"></div>
+<div class="undo" id="undo" role="status" hidden></div>
 <div id="modal" hidden></div>
 <datalist id="exlist"><option>Bench Press</option><option>Back Squat</option><option>Deadlift</option><option>Overhead Press</option><option>Barbell Row</option><option>Pull-ups</option><option>Chin-ups</option><option>Dips</option><option>Incline Dumbbell Press</option><option>Romanian Deadlift</option><option>Leg Press</option><option>Lat Pulldown</option><option>Bicep Curl</option><option>Tricep Pushdown</option><option>Lateral Raise</option><option>Lunges</option><option>Push-ups</option><option>Plank</option></datalist>
 
@@ -668,6 +706,10 @@ const ICON={
   flame:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-5 1-8.5z"/></svg>',
   trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
   swap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5z"/></svg>',
+  coin:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><text x="12" y="16.5" text-anchor="middle" font-size="12" font-weight="700" fill="#0d0f1e" font-family="sans-serif">C</text></svg>',
+  edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/></svg>',
+  skull:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a9 9 0 0 0-9 9c0 3 1.5 5.3 4 6.6V21h3v-2h4v2h3v-3.4c2.5-1.3 4-3.6 4-6.6a9 9 0 0 0-9-9zm-3.5 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm7 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></svg>',
   trophy:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 3h10v3h3v2a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v3H8v-3h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V6h3zm0 5V8H6a2 2 0 0 0 1 1.7zm10 0v1.7A2 2 0 0 0 18 8z"/></svg>'
 };
 
@@ -704,12 +746,17 @@ function defaults(){
     quests:[Q('Push-ups','C','STR',100,'reps',10),Q('Sit-ups','C','STR',100,'reps',10),Q('Squats','C','STR',100,'reps',10),Q('Running','B','AGI',10,'km',1),Object.assign(Q('Read','D','INT',20,'pages',5),{skill:'sk_read'})],
     classes:[{id:'c_example',name:'Example class',color:CLASS_COLORS[0]}],
     tasks:[{id:uid(),title:'Example: Problem set 4',cls:'c_example',type:'Homework',due:addDays(t,2),diff:'C',done:false}],
-    style:'sorcerer',bm:{},hist:{},timer:null,bsLast:'',bsCount:0,created:t,dismissed:'',updatedAt:0};
+    style:'sorcerer',bm:{},hist:{},timer:null,bsLast:'',bsCount:0,created:t,dismissed:'',updatedAt:0,
+    grades:[],cards:[],books:[],routines:[],meals:[],
+    rewards:[{id:'rw_game',name:'1 h of gaming',cost:100},{id:'rw_cheat',name:'Cheat meal',cost:250},{id:'rw_show',name:'Episode of a show',cost:60}],
+    buys:[],coop:{},reportSeen:'',pomo:{work:25,brk:5}};
 }
 function normalize(s){
   const d=defaults();
   s=Object.assign({},d,s||{});
-  ['skills','quests','tasks','classes'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
+  ['skills','quests','tasks','classes','grades','cards','books','routines','meals','rewards','buys'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
+  if(!s.coop||typeof s.coop!=='object')s.coop={};
+  if(!s.pomo||!(s.pomo.work>0))s.pomo={work:25,brk:5};
   s.bm=s.bm||{};s.hist=s.hist||{};
   if(s.v!==2){ // migrate from v1: tasks gain a class and type
     s.tasks.forEach(t=>{if(!t.type)t.type='Homework';if(t.cls==null)t.cls='';if(t.skill)delete t.skill});
@@ -742,13 +789,184 @@ async function flush(){
   if(!docRef)return;
   if(writing){pending=true;return}
   writing=true;
-  try{prune();await docRef.set({s:JSON.parse(JSON.stringify(S)),at:S.updatedAt});setSync('cloud')}catch(e){setSync('error')}
+  try{prune();await docRef.set({s:JSON.parse(JSON.stringify(S)),at:S.updatedAt});setSync('cloud');if(sbUser)partyPublish()}catch(e){setSync('error')}
   writing=false;
   if(pending){pending=false;flush()}
 }
 function setSync(s){syncState=s;const el=$('#syncline');if(el)el.textContent=syncText()}
-function syncText(){return {local:'Saved on this device',cloud:'Synced to your account',error:'Sync failed. Progress is saved on this device.',loading:'Connecting to your account…'}[syncState]}
+function syncText(){if(syncState==='error'&&navigator.onLine===false)return 'Offline. Saved on this device; it syncs when you\'re back online.';return {local:'Saved on this device',cloud:sbUser?'Synced to '+(sbUser.email||'your account'):'Synced to your account',error:'Sync failed. Progress is saved on this device.',loading:'Connecting to your account…'}[syncState]}
 function adopt(remote){S=normalize(remote);applyStyle(S.style);CC=null;lsSet('ascension-state',JSON.stringify(S));render()}
+// ================= cloud sync (Supabase): one save across phone, laptop and the hosted copy =================
+// Config comes from the GitHub build (window.ASC_CONFIG) or is pasted into Profile on this device.
+const CLOUD_KEY='ascension-cloud';
+let sb=null,sbUser=null,sbChan=null,cloudMsg='',cloudEmail='',cloudStage='';
+function cloudCfg(){
+  const b=window.ASC_CONFIG||{};if(b.sbUrl&&b.sbKey)return {url:b.sbUrl,key:b.sbKey,vapid:b.vapid||'',built:true};
+  try{const c=JSON.parse(lsGet(CLOUD_KEY)||'null');if(c&&c.url&&c.key)return {url:c.url,key:c.key,vapid:c.vapid||''}}catch(e){}
+  return null;
+}
+async function sbInit(){
+  const cfg=cloudCfg();if(!cfg)return;
+  try{await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js')}catch(e){cloudMsg='Could not load the sync library. Check your connection.';return}
+  try{sb=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit',storageKey:'ascension-auth'}})}catch(e){cloudMsg='The project URL or key looks wrong.';sb=null;return}
+  sb.auth.onAuthStateChange((ev,ses)=>{const u=ses&&ses.user;if(u&&(!sbUser||sbUser.id!==u.id))sbStart(u);else if(!u&&sbUser){sbStop();render()}});
+  try{const {data}=await sb.auth.getSession();if(data&&data.session&&!sbUser)await sbStart(data.session.user)}catch(e){}
+  if(location.hash.indexOf('access_token')>=0||location.hash.indexOf('error')>=0){try{history.replaceState(null,'','#'+tab)}catch(e){}}
+  render();
+}
+async function sbStart(user){
+  sbUser=user;cloudStage='';setSync('loading');
+  docRef={set:async({s:st,at})=>{const {error}=await sb.from('ascension_state').upsert({user_id:user.id,state:st,updated_at:at,digest:digest()});if(error)throw error}};
+  try{
+    await sbPull(true);
+    if(sbChan)sb.removeChannel(sbChan);
+    sbChan=sb.channel('state-'+user.id).on('postgres_changes',{event:'*',schema:'public',table:'ascension_state',filter:'user_id=eq.'+user.id},pl=>{const d=pl.new;if(!d||!d.state||writing||pending)return;if((+d.updated_at||0)>(S.updatedAt||0))adopt(d.state)}).subscribe();
+    setSync('cloud');partySubscribe();render();
+  }catch(e){setSync('error');cloudMsg='Signed in, but the database isn\'t set up. Run supabase/setup.sql in your Supabase project.';render()}
+}
+async function sbPull(pushIfOlder){
+  const {data,error}=await sb.from('ascension_state').select('state,updated_at').eq('user_id',sbUser.id).maybeSingle();
+  if(error)throw error;
+  if(data&&data.state&&(+data.updated_at||0)>(S.updatedAt||0))adopt(data.state);
+  else if(pushIfOlder)await flush();
+}
+function sbStop(){sbUser=null;docRef=null;if(sbChan&&sb)sb.removeChannel(sbChan);sbChan=null;partyUnsub();setSync('local')}
+// Small summary the reminder job reads, so it can say "2 quests left" without running the app.
+function digest(){
+  const t=today(),h=S.hist[t]||{a:{}},sch=scheduledOn(t),R=C(),bw=R.boss[weekKey(t)];
+  const days={};for(let i=0;i<8;i++){const k=addDays(t,i);days[k]=scheduledOn(k).length}
+  return {date:t,tz:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC',left:sch.filter(q=>!(h.a&&h.a[q.id])).length,sched:days,streak:R.streak.daily.cur,
+    due:S.tasks.filter(x=>!x.done&&x.due&&x.due>=t&&x.due<=addDays(t,7)).sort((a,b)=>a.due<b.due?-1:1).slice(0,15).map(x=>({t:x.title.slice(0,60),d:x.due,y:x.type})),
+    boss:bw&&!bw.won?bw.goals.filter(g=>g.v<g.n).map(g=>`${r1(g.n-g.v)}${g.u} ${g.l}`):[],name:S.name};
+}
+// ================= party: shared leaderboard + co-op boss =================
+let party={members:[],chan:null,err:'',busy:false},pubT=null,pubLast='';
+const PARTY_ABC='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function myCard(){
+  const R=C(),t=today(),wk=weekKey(t),ws=weekStats(wk,R),li=levelInfo(R.total,needH);
+  return {name:S.name||ST.person,lvl:li.L,rank:Math.floor(overall()),streak:R.streak.daily.cur,shields:R.streak.daily.shields,wk,xp:ws.xp,vals:weekCum(wk,R),boss:!!(R.boss[wk]&&R.boss[wk].won),at:Date.now()};
+}
+function partyPublish(){
+  if(!sb||!sbUser||!S.party)return;
+  clearTimeout(pubT);pubT=setTimeout(async()=>{const card=myCard(),key=JSON.stringify(Object.assign({},card,{at:0}));if(key===pubLast)return;
+    const {error}=await sb.from('party_members').upsert({code:S.party.code,user_id:sbUser.id,name:card.name,card,updated_at:new Date().toISOString()});if(!error)pubLast=key},1500);
+}
+async function partyLoad(){
+  if(!sb||!sbUser||!S.party)return;
+  const {data,error}=await sb.from('party_members').select('user_id,name,card,updated_at').eq('code',S.party.code);
+  if(error){party.err='Could not load your party.';return}
+  party.members=data||[];party.err='';
+  if(!party.members.some(m=>m.user_id===sbUser.id))partyPublish();
+  coopCheck();
+}
+function partySubscribe(){
+  partyUnsub();if(!sb||!sbUser||!S.party)return;
+  partyLoad().then(()=>{if(tab==='party'||tab==='home')render()});partyPublish();
+  party.chan=sb.channel('party-'+S.party.code).on('postgres_changes',{event:'*',schema:'public',table:'party_members',filter:'code=eq.'+S.party.code},()=>partyLoad().then(()=>{if(tab==='party'||tab==='home')render()})).subscribe();
+}
+function partyUnsub(){if(party.chan&&sb)sb.removeChannel(party.chan);party.chan=null;party.members=[]}
+function coopBoss(){
+  const wk=weekKey(today()),ms=party.members.filter(m=>m.card),n=Math.max(1,ms.length),base=bossGoals(wk);
+  const goals=base.map(g=>{const v=ms.reduce((a,m)=>a+(m.card.wk===wk&&m.card.vals?+m.card.vals[g.k]||0:0),0);return Object.assign({},g,{n:g.n*n,v:r1(v)})});
+  return {wk,name:'Raid: '+BOSSES[seedOf(wk+(S.party?S.party.code:''))%BOSSES.length],goals,won:goals.every(g=>g.v>=g.n)};
+}
+function coopCheck(){
+  if(!S.party||party.members.length<2)return;const b=coopBoss();
+  if(b.won&&!S.coop[b.wk]){commit(()=>{S.coop[b.wk]=today()});sys('Co-op boss defeated',`Your party took down ${b.name}. +${COOP_XP} XP, +${COOP_COINS} coins.`)}
+}
+async function partyCreate(name){
+  if(!sb||!sbUser)return;party.busy=true;render();
+  let code='';for(let i=0;i<6;i++)code+=PARTY_ABC[Math.floor(Math.random()*PARTY_ABC.length)];
+  const {error}=await sb.from('parties').insert({code,name:name.slice(0,40),owner:sbUser.id});
+  party.busy=false;if(error){party.err='Could not create the party. Is supabase/setup.sql installed?';render();return}
+  commit(()=>{S.party={code,name}});partySubscribe();sys('Party created',`Share the code ${code} so friends can join.`);
+}
+async function partyJoin(code){
+  if(!sb||!sbUser)return;code=code.toUpperCase().replace(/[^A-Z0-9]/g,'');party.busy=true;render();
+  const {data,error}=await sb.from('parties').select('code,name').eq('code',code).maybeSingle();
+  party.busy=false;if(error||!data){party.err=`No party with the code ${code}.`;render();return}
+  commit(()=>{S.party={code:data.code,name:data.name}});partySubscribe();sys('Joined party',data.name);
+}
+async function partyLeave(){
+  if(sb&&sbUser&&S.party)await sb.from('party_members').delete().eq('code',S.party.code).eq('user_id',sbUser.id);
+  partyUnsub();commit(()=>{S.party=null});
+}
+function partyHomeCard(){
+  if(!S.party||!sbUser||!party.members.length)return '';
+  const top=[...party.members].filter(m=>m.card).sort((a,b)=>(b.card.wk===weekKey(today())?b.card.xp:0)-(a.card.wk===weekKey(today())?a.card.xp:0))[0];
+  return `<button class="win row between" data-act="tab" data-k="party" style="text-align:left;width:100%"><div><div class="lbl">Party · ${esc(S.party.name)}</div><b>${party.members.length} member${party.members.length===1?'':'s'}${top?` · ${esc(top.name)} leads this week`:''}</b></div><span class="note">Open ›</span></button>`;
+}
+function renderParty(){
+  const head=topbar('Party');
+  if(!cloudCfg())return head+`<section class="win stack"><h3>Party</h3><p class="note">Parties need cloud sync. Set it up in Profile → Cloud sync, then come back.</p><div><button class="btn pri" data-act="tab" data-k="profile">Open Profile</button></div></section>`;
+  if(!sbUser)return head+`<section class="win stack"><h3>Party</h3><p class="note">Sign in under Profile → Cloud sync to create or join a party.</p><div><button class="btn pri" data-act="tab" data-k="profile">Sign in</button></div></section>`;
+  if(!S.party)return head+`<section class="win stack"><h3>Start a party</h3><p class="note">Share a leaderboard, see each other's streaks and take on a co-op boss every week.</p>
+    <form class="row wrap" data-form="pcreate" style="gap:8px" autocomplete="off"><input name="n" placeholder="Party name" maxlength="40" required style="flex:1;min-width:160px" aria-label="Party name"><button class="btn pri" type="submit" ${party.busy?'disabled':''}>Create</button></form></section>
+    <section class="win stack"><h3>Join a party</h3><form class="row wrap" data-form="pjoin" style="gap:8px" autocomplete="off"><input name="c" placeholder="Code, e.g. K7M2QX" maxlength="8" required style="flex:1;min-width:140px;text-transform:uppercase" aria-label="Party code"><button class="btn" type="submit" ${party.busy?'disabled':''}>Join</button></form>${party.err?`<div class="note" style="color:var(--warn)">${esc(party.err)}</div>`:''}</section>`;
+  const wk=weekKey(today()),ms=[...party.members].sort((a,b)=>((b.card&&b.card.wk===wk?b.card.xp:0)-(a.card&&a.card.wk===wk?a.card.xp:0)));
+  const cb=coopBoss();
+  return head+`<section class="win stack"><div class="row between wrap"><div><div class="lbl">Party</div><b style="font-family:var(--f-display);font-size:1.2rem">${esc(S.party.name)}</b></div><div style="text-align:right"><div class="lbl">Invite code</div><b class="num" style="font-family:var(--f-display);font-size:1.2rem;letter-spacing:.15em">${esc(S.party.code)}</b></div></div>
+    <div class="row wrap" style="gap:8px"><button class="btn sm" data-act="pcopy">Copy invite</button><button class="btn sm ghost" data-act="prefresh">Refresh</button></div></section>
+  <section class="stack"><h3>This week's leaderboard</h3>${ms.length?ms.map((m,i)=>{const c=m.card||{},cur=c.wk===wk;return `<div class="lb ${m.user_id===sbUser.id?'me':''}"><span class="pos">${i+1}</span><div style="min-width:0"><div class="tt" style="font-weight:700;overflow-wrap:anywhere">${esc(m.name||'Member')}${m.user_id===sbUser.id?' (you)':''}</div><div class="note num">Lv ${c.lvl||1} · ${esc(TIERS[clamp(c.rank||0,0,7)])} · ${ICON.flame.replace('<svg','<svg style="width:12px;height:12px;vertical-align:-1px"')}${c.streak||0} day streak${c.shields?' · '+c.shields+' shield'+(c.shields>1?'s':''):''}${cur&&c.boss?' · boss down':''}</div></div><b class="num">${fmtN(cur?c.xp:0)} XP</b></div>`}).join(''):'<div class="note">Loading…</div>'}</section>
+  ${ms.length>1?bossCard(cb,true,S.coop[wk]?'<div class="note" style="color:var(--good)">Reward collected.</div>':''):'<div class="empty">Invite someone with the code above to unlock the co-op boss.</div>'}
+  <p class="note">Your level, rank, streak and this week's totals are shared with party members. Your logs stay private.</p>
+  <div><button class="btn danger sm" data-act="pleave">Leave party</button></div>`;
+}
+
+// ================= push reminders =================
+const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const isStandalone=()=>(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+let pushOn=false,installEvt=null;
+async function pushState(){try{if(!swReg||!swReg.pushManager)return false;const sub=await swReg.pushManager.getSubscription();pushOn=!!sub}catch(e){pushOn=false}return pushOn}
+function b64u(s){const p='='.repeat((4-s.length%4)%4),b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(b,c=>c.charCodeAt(0))}
+async function pushEnable(){
+  const cfg=cloudCfg();
+  if(!cfg||!cfg.vapid){sys('Reminders not set up','Add the VAPID_PUBLIC_KEY variable on GitHub (see README).');return}
+  if(!sbUser){sys('Sign in first','Reminders are sent from your cloud account.');return}
+  if(isIOS&&!isStandalone()){sys('Add to Home Screen first','On iPhone, reminders only work from the Home Screen app. Share → Add to Home Screen, then open it from there.');return}
+  if(!swReg||!('PushManager' in window)){sys('Not supported','This browser cannot receive push reminders.');return}
+  const perm=await Notification.requestPermission();if(perm!=='granted'){sys('Reminders blocked','Allow notifications for this app in your settings.');return}
+  try{
+    const sub=await swReg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(cfg.vapid)});
+    const {error}=await sb.from('push_subs').upsert({endpoint:sub.endpoint,user_id:sbUser.id,sub:sub.toJSON(),tz:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'});
+    if(error)throw error;pushOn=true;flush();sys('Reminders on','You\'ll get evening nudges for unfinished quests, the day-before heads-up for due work, and the Sunday report.');
+  }catch(e){sys('Could not turn on reminders','Try again, or check the setup steps in the README.')}
+  render();
+}
+async function pushDisable(){
+  try{const sub=await swReg.pushManager.getSubscription();if(sub){if(sb)await sb.from('push_subs').delete().eq('endpoint',sub.endpoint);await sub.unsubscribe()}}catch(e){}
+  pushOn=false;render();sys('Reminders off','No more push notifications on this device.');
+}
+function cloudCard(){
+  const cfg=cloudCfg();
+  let body='';
+  if(!cfg)body=`<p class="note">Sync is off, so progress lives only in this browser. Connect a free Supabase project to share one save across your phone, laptop and the claude.ai copy. Setup steps are in the README.</p>
+    <form class="stack" data-form="cloudcfg" autocomplete="off"><div class="field"><label for="cc_u">Project URL</label><input id="cc_u" name="u" placeholder="https://xxxx.supabase.co" inputmode="url"></div><div class="field"><label for="cc_k">Anon public key</label><input id="cc_k" name="k" placeholder="eyJhbGciOi…"></div><div class="field"><label for="cc_v">VAPID public key (optional, for reminders)</label><input id="cc_v" name="v"></div><div><button class="btn" type="submit">Connect</button></div></form>`;
+  else if(!sb)body=`<p class="note">${esc(cloudMsg||'Connecting…')}</p>`;
+  else if(!sbUser)body=cloudStage==='sent'?`<p class="note">We emailed <b>${esc(cloudEmail)}</b>. Tap the link in it on this device. ${isStandalone()||isIOS?'In the Home Screen app, press and hold the link in the email, choose Copy Link, and paste it here instead.':'Or paste the link (or a 6-digit code, if the email has one) here.'}</p>
+      <form class="row wrap" data-form="cloudcode" style="gap:8px" autocomplete="off"><input name="code" autocomplete="one-time-code" placeholder="Paste the link or code" maxlength="2000" style="flex:1;min-width:160px" aria-label="Sign-in link or code"><button class="btn pri" type="submit">Sign in</button><button class="btn ghost" type="button" data-act="cloudback">Use another email</button></form>`
+    :`<p class="note">Sign in once on each device. Your current progress is kept and merged: the most recent save wins.</p>
+      <form class="row wrap" data-form="cloudemail" style="gap:8px"><input name="email" type="email" autocomplete="email" placeholder="you@example.com" required style="flex:1;min-width:180px" aria-label="Email"><button class="btn pri" type="submit">Email me a sign-in link</button></form>${cfg.built?'':'<div><button class="btn sm ghost" data-act="cloudforget">Change project</button></div>'}`;
+  else body=`<p class="note">Signed in as <b>${esc(sbUser.email||'')}</b>. Changes sync to every device you sign in on, within a second or two.</p><div class="row wrap" style="gap:8px"><button class="btn" data-act="cloudsync">Sync now</button><button class="btn ghost" data-act="cloudout">Sign out</button>${cfg.built?'':'<button class="btn ghost" data-act="cloudforget">Disconnect project</button>'}</div>`;
+  return `<section class="win stack"><h3>Cloud sync</h3>${body}${cloudMsg&&sb?`<div class="note" style="color:var(--warn)">${esc(cloudMsg)}</div>`:''}</section>`;
+}
+function appCard(){
+  const canPush=!!(swReg&&'PushManager' in window),cfg=cloudCfg();
+  const install=isStandalone()?'<p class="note">Installed. It opens full screen and works offline.</p>':installEvt?'<div><button class="btn pri" data-act="install">Install app</button></div>':isIOS?'<p class="note">On iPhone: tap Share, then <b>Add to Home Screen</b>. It then opens full screen, works offline at the gym, and can send reminders.</p>':'<p class="note">Use your browser menu → Install app (or Add to Home Screen) to get an app icon and offline mode.</p>';
+  const rem=!cfg?'<p class="note">Reminders need cloud sync.</p>':!cfg.vapid?'<p class="note">Reminders need a VAPID key in the GitHub setup (see README).</p>':!canPush?(isIOS&&!isStandalone()?'<p class="note">Add the app to your Home Screen first; iPhone only sends reminders to Home Screen apps.</p>':'<p class="note">This browser can\'t receive push reminders.</p>')
+    :pushOn?'<div class="row wrap" style="gap:8px"><span class="note grow">Reminders are on for this device: quests left in the evening, work due tomorrow, and the Sunday report.</span><button class="btn ghost" data-act="pushoff">Turn off</button></div>':'<div class="row wrap" style="gap:8px"><span class="note grow">Get nudges like “2 quests left, resets in 3h” or “Quiz 5 due tomorrow”.</span><button class="btn pri" data-act="pushon">Turn on reminders</button></div>';
+  return `<section class="win stack"><h3>App & reminders</h3>${install}${rem}</section>`;
+}
+function registerSW(){
+  if(!('serviceWorker' in navigator)||!/^https?:/.test(location.protocol)||!document.querySelector('link[rel="manifest"]'))return;
+  navigator.serviceWorker.register('sw.js').then(r=>{swReg=r;pushState().then(()=>{if(tab==='profile')render()})}).catch(()=>{});
+  navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.tab&&TABS.includes(e.data.tab))setTab(e.data.tab)});
+}
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;if(tab==='profile')render()});
+addEventListener('online',()=>{if(docRef)flush();else setSync(syncState)});
+addEventListener('offline',()=>setSync(syncState));
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){CC=null;if(sbUser&&!writing&&!pending)sbPull(false).catch(()=>{});if(S.party&&sbUser)partyLoad().then(()=>{if(tab==='party')render()})}});
+
 async function connect(){
   if(!window.claude||!window.claude.use)return;
   setSync('loading');
@@ -758,6 +976,7 @@ async function connect(){
     if(!db||!user){setSync('local');return}
     const id=await user.id();
     if(!id){setSync('local');return}
+    if(sbUser)return; // signed in to cloud sync: that save wins
     docRef=db.doc('data/users/'+id+'/state');
     const snap=await docRef.get();
     const remote=snap.exists?snap.data():null;
@@ -837,6 +1056,16 @@ function dayStreak(test){
   for(let i=0;i<1100&&k<=t;i++,k=addDays(k,1)){const r=test(k);if(r==='y'){run++;if(run>best)best=run}else if(r==='n'&&k!==t)run=0}
   return {cur:run,best};
 }
+// Daily streak with shields: every 7 days in a row earns a shield (max 3); a missed day uses one instead of resetting.
+function shieldStreak(test){
+  const t=today();let k=startKey(),run=0,best=0,sh=0;const used=[];
+  for(let i=0;i<1100&&k<=t;i++,k=addDays(k,1)){
+    const r=test(k);
+    if(r==='y'){run++;if(run>best)best=run;if(run%7===0)sh=Math.min(MAX_SHIELDS,sh+1)}
+    else if(r==='n'&&k!==t){if(sh>0&&run>0){sh--;used.push(k)}else run=0}
+  }
+  return {cur:run,best,shields:sh,used};
+}
 function weekStreak(weeks){
   const cw=weekKey(today());let k=weekKey(startKey()),run=0,best=0;
   for(let i=0;i<200&&k<=cw;i++,k=addDays(k,7)){const ok=(weeks[k]||0)>=S.wkTarget;if(ok){run++;if(run>best)best=run}else if(k!==cw)run=0}
@@ -844,7 +1073,8 @@ function weekStreak(weeks){
 }
 function compute(){
   const t=today(),R={days:{},xp:{daily:0,train:0,fuel:0,school:0},pts:{STR:0,AGI:0,VIT:0,INT:0,WIL:0},skill:{},cls:{},clsMin:{},weeks:{},
-    cnt:{quests:0,clears:0,workouts:0,sets:0,km:0,trainMin:0,fuelDays:0,fuelOn:0,studyMin:0,tasksDone:0,tasksOnTime:0,prs:0,weightLogs:0}};
+    cnt:{quests:0,clears:0,workouts:0,sets:0,km:0,trainMin:0,fuelDays:0,fuelOn:0,studyMin:0,tasksDone:0,tasksOnTime:0,prs:0,weightLogs:0,pomo:0,cards:0,pages:0,books:0,bosses:0}};
+  const rs=S.skills.find(x=>/read/i.test(x.name)),readSkill=rs&&rs.id;
   const D=k=>R.days[k]||(R.days[k]={daily:0,train:0,fuel:0,school:0,wo:0,study:0,tasks:0,kcal:0,prot:0,fuelN:0,fuelOn:false,clr:false});
   const addP=(s,v)=>{R.pts[s]=(R.pts[s]||0)+v};
   for(const k of Object.keys(S.hist).sort()){
@@ -872,9 +1102,12 @@ function compute(){
     }
     if(h.wt){d.fuel+=3;R.cnt.weightLogs++}
     if((h.wa||0)>=S.waterTarget){d.fuel+=5;addP('VIT',.5)}
-    let sm=0;for(const s of h.s||[]){sm+=+s.min||0;if(s.cls){R.cls[s.cls]=(R.cls[s.cls]||0)+s.min*.05;R.clsMin[s.cls]=(R.clsMin[s.cls]||0)+(+s.min||0)}}
+    let sm=0;for(const s of h.s||[]){sm+=+s.min||0;if(s.pomo){d.school+=10*s.pomo;d.pomo=(d.pomo||0)+s.pomo;R.cnt.pomo+=s.pomo}if(s.cls){R.cls[s.cls]=(R.cls[s.cls]||0)+s.min*.05;R.clsMin[s.cls]=(R.clsMin[s.cls]||0)+(+s.min||0)}}
     if(sm){d.study=sm;d.school+=Math.round(Math.min(sm,240)*.3);addP('INT',sm*.03);R.cnt.studyMin+=sm}
+    if(h.fc){d.fc=h.fc;d.school+=Math.min(h.fc,40);addP('INT',Math.min(h.fc,80)*.04);R.cnt.cards+=h.fc}
+    if(h.rd){d.read=h.rd;d.school+=Math.min(30,Math.round(h.rd*.2));addP('INT',Math.min(h.rd,300)*.02);if(readSkill)R.skill[readSkill]=(R.skill[readSkill]||0)+Math.min(h.rd,300)*.03;R.cnt.pages+=h.rd}
   }
+  for(const b of S.books){if(b.status==='done'&&b.fin){const d=D(b.fin);d.school+=50;d.booksDone=(d.booksDone||0)+1;addP('INT',5);R.cnt.books++}}
   for(const tk of S.tasks){
     if(!tk.done||!tk.award)continue;
     const a=tk.award,dk=a.day||tk.doneOn||t,d=D(dk);
@@ -883,11 +1116,20 @@ function compute(){
     R.cnt.tasksDone++;if(!tk.due||dk<=tk.due)R.cnt.tasksOnTime++;
   }
   for(const wk in R.weeks)if(R.weeks[wk]>=S.wkTarget){R.xp.train+=40;addP('WIL',2)}
+  // weekly boss: derived from the week's activity, so edits and undo stay consistent
+  R.boss={};let bossCoins=0;
+  for(let wk=weekKey(startKey()),i=0;i<200&&wk<=weekKey(t);i++,wk=addDays(wk,7)){
+    const b=bossFor(wk,R);R.boss[wk]=b;
+    if(b.won){const d=D(b.wonOn);d.daily+=BOSS_XP;d.boss=true;addP('WIL',5);bossCoins+=BOSS_COINS;R.cnt.bosses++}
+  }
+  for(const wk in S.coop){if(S.coop[wk]){const d=D(S.coop[wk]===true?addDays(wk,6):S.coop[wk]);d.daily+=COOP_XP;addP('WIL',3);bossCoins+=COOP_COINS}}
   for(const k in R.days){const d=R.days[k];PATHK.forEach(p=>R.xp[p]+=d[p])}
   for(const s in R.pts)R.pts[s]=r1(R.pts[s]);
   R.total=PATHK.reduce((n,p)=>n+R.xp[p],0);
+  R.coinsEarned=Math.floor(R.total/10)+bossCoins;
+  R.coins=R.coinsEarned-S.buys.reduce((n,b)=>n+(+b.cost||0),0);
   R.streak={
-    daily:dayStreak(k=>{const d=R.days[k];if(d&&d.clr)return 'y';return scheduledOn(k).length?'n':'s'}),
+    daily:shieldStreak(k=>{const d=R.days[k];if(d&&d.clr)return 'y';return scheduledOn(k).length?'n':'s'}),
     train:weekStreak(R.weeks),
     fuel:dayStreak(k=>R.days[k]&&R.days[k].fuelOn?'y':'n'),
     school:dayStreak(k=>{const d=R.days[k];return d&&(d.study||d.tasks)?'y':'n'}),
@@ -904,8 +1146,31 @@ function questStreak(q,includeToday){
 }
 const mult=s=>1+Math.min(s,50)*.01;
 
+// ================= weekly boss =================
+const MAX_SHIELDS=3,BOSS_XP=150,BOSS_COINS=50,COOP_XP=100,COOP_COINS=30;
+const BOSSES=['Iron Golem','Shadow Monarch','Cursed Womb','Frost Wyvern','Gate Keeper','Ashen Knight','Abyss Hydra','Storm Titan','Hollow King','Crimson Drake'];
+const seedOf=str=>{let h=7;for(const c of String(str))h=(h*31+c.charCodeAt(0))|0;return Math.abs(h)};
+const GOAL_DEF={wo:{l:'workouts',u:''},study:{l:'study',u:'h'},fuel:{l:'days on calorie target',u:''},clr:{l:'days all quests cleared',u:''},tasks:{l:'tasks finished',u:''}};
+function bossGoals(wk){
+  const third=['fuel','clr','tasks','clr','fuel'][seedOf(wk)%5];
+  const n={wo:Math.min(7,S.wkTarget+1),study:5,fuel:5,clr:6,tasks:5};
+  return ['wo','study',third].map(k=>({k,n:n[k],l:GOAL_DEF[k].l,u:GOAL_DEF[k].u}));
+}
+function weekCum(wk,R,upto){
+  const cum={wo:0,study:0,fuel:0,clr:0,tasks:0};
+  for(let i=0;i<(upto==null?7:upto+1);i++){const d=R.days[addDays(wk,i)];if(!d)continue;cum.wo+=d.wo||0;cum.study+=(d.study||0)/60;cum.fuel+=d.fuelOn?1:0;cum.clr+=d.clr?1:0;cum.tasks+=d.tasks||0}
+  return cum;
+}
+function bossFor(wk,R){
+  const goals=bossGoals(wk);let wonOn=null;
+  for(let i=0;i<7&&!wonOn;i++){const c=weekCum(wk,R,i);if(goals.every(g=>c[g.k]>=g.n)&&R.days[addDays(wk,i)])wonOn=addDays(wk,i)}
+  const c=weekCum(wk,R);
+  return {wk,name:BOSSES[seedOf(wk+'b')%BOSSES.length],goals:goals.map(g=>Object.assign({},g,{v:r1(c[g.k])})),won:!!wonOn,wonOn};
+}
+const bossHp=b=>1-b.goals.reduce((n,g)=>n+Math.min(1,g.v/g.n),0)/b.goals.length;
+
 // ================= level / rank announcements =================
-function snap(){CC=null;return {lvl:levelInfo(C().total,needH).L,ov:tierName(overall()),st:Object.fromEntries(STATS.map(s=>[s,tierName(statTier(s).t)])),p:Object.fromEntries(PATHK.map(p=>[p,pathInfo(p)])),ach:achievements().filter(a=>a.ok).map(a=>a.id)}}
+function snap(){CC=null;const R=C(),bw=R.boss[weekKey(today())];return {shields:R.streak.daily.shields,boss:!!(bw&&bw.won),lvl:levelInfo(C().total,needH).L,ov:tierName(overall()),st:Object.fromEntries(STATS.map(s=>[s,tierName(statTier(s).t)])),p:Object.fromEntries(PATHK.map(p=>[p,pathInfo(p)])),ach:achievements().filter(a=>a.ok).map(a=>a.id)}}
 function announce(b){
   const a=snap();
   if(a.lvl>b.lvl)sys('Level up',`${ST.person} level ${a.lvl} reached.`);
@@ -913,18 +1178,31 @@ function announce(b){
   if(TIERS.indexOf(a.ov)>TIERS.indexOf(b.ov))sys(ST.promo,`You are now ${ST.rankLabel(a.ov)}. Title: ${autoTitle()}.`);
   STATS.forEach(s=>{if(TIERS.indexOf(a.st[s])>TIERS.indexOf(b.st[s]))sys(STAT_NAMES[s]+' increased',`${s} is now ${ST.rankLabel(a.st[s])}.`)});
   achievements().filter(x=>x.ok&&!b.ach.includes(x.id)).forEach(x=>sys('Achievement unlocked',`${x.name}: ${x.desc}`));
+  if(a.boss&&!b.boss){const bw=C().boss[weekKey(today())];sys('Boss defeated',`${bw?bw.name:'Weekly boss'} is down. +${BOSS_XP} XP, +${BOSS_COINS} coins.`)}
+  if(a.shields>b.shields)sys('Streak shield earned',`7 more days in a row. You hold ${a.shields} shield${a.shields===1?'':'s'}; one saves your streak on a missed day.`);
 }
-function commit(fn){const b=snap();fn();save();announce(b);render()}
+// commit(fn,label): apply a change, save, announce rank-ups, and (with a label) offer Undo for a few seconds.
+function commit(fn,label){const prev=label?JSON.stringify(S):null;const b=snap();fn();save();announce(b);render();if(label)offerUndo(prev,label)}
+let undoPrev=null,undoT=null;
+function offerUndo(prev,label){
+  undoPrev=prev;const el=$('#undo');if(!el)return;
+  el.innerHTML=`<span>${esc(label)}</span><button class="btn sm" data-act="undo">Undo</button>`;el.hidden=false;
+  clearTimeout(undoT);undoT=setTimeout(()=>{el.hidden=true;undoPrev=null},7000);
+}
+function doUndo(){
+  if(!undoPrev)return;const s0=JSON.parse(undoPrev);undoPrev=null;clearTimeout(undoT);$('#undo').hidden=true;
+  const timer=S.timer;S=normalize(s0);S.timer=timer;applyStyle(S.style);save();render();sys('Undone','That change was reversed.');
+}
 
 // ================= actions =================
-function setQuestAmount(q,amt){
+function setQuestAmount(q,amt,label){
   commit(()=>{
     const t=today(),h=day(t),target=q.target||1;amt=clamp(amt,0,target*5);
     const was=!!h.a[q.id];h.p[q.id]=amt;const now=amt>=target;
     if(now&&!was){const m=mult(questStreak(q,false)),d=DIFF[q.diff]||DIFF.C;h.a[q.id]={xp:Math.round(d.xp*m),pts:r1(d.pts*m),stat:q.stat,skill:q.skill||'',day:t}}
     else if(!now&&was)delete h.a[q.id];
     checkClear(t);
-  });
+  },label);
 }
 function checkClear(t){
   const h=day(t),sch=scheduledOn(t),all=sch.length>0&&sch.every(q=>h.a[q.id]);
@@ -936,7 +1214,7 @@ function completeTask(tk){
   tk.done=true;tk.doneOn=t;tk.award={xp:Math.round(d.xp*early*late),pts:r1(d.pts*early*late),stat:'INT',day:t};
   sys('Task complete',`${tk.title}: +${tk.award.xp} XP${early>1?' (early bonus)':late<1?' (late)':''}.`);
 }
-function toggleTask(id){const tk=S.tasks.find(x=>x.id===id);if(!tk)return;commit(()=>{if(!tk.done)completeTask(tk);else{tk.done=false;tk.doneOn=null;tk.award=null}})}
+function toggleTask(id){const tk=S.tasks.find(x=>x.id===id);if(!tk)return;const was=tk.done;commit(()=>{if(!tk.done)completeTask(tk);else{tk.done=false;tk.doneOn=null;tk.award=null}},`${tk.title} ${was?'reopened':'done'}`)}
 function logBenchmark(key,v,est,dateK){
   if(!(v>0))return false;
   const prev=bmBest(key),lower=BM[key].lower,k=dateK||today();
@@ -1013,13 +1291,13 @@ function importICS(txt){
     const ex=S.tasks.find(x=>x.uid===key);
     if(ex){if(!ex.done&&(ex.due!==due||ex.title!==title)){ex.due=due;ex.title=title;updated++}}
     else{S.tasks.push({id:uid(),uid:key,src:'bs',title,cls,type,due,diff:TYPE_DIFF[type]||'C',done:false});added++}
-    const offs=type==='Test'?[5,2]:type==='Quiz'?[1]:[];
+    const offs=REVIEW_OFFS[type]||[];
     offs.forEach(off=>{
       const rk=key+'#review'+off,rdue=addDays(due,-off);
       const rex=S.tasks.find(x=>x.uid===rk);
       if(rex){if(!rex.done&&rex.due!==rdue){rex.due=rdue}return}
       if(rdue<t)return;
-      S.tasks.push({id:uid(),uid:rk,src:'bs',auto:true,title:(off>=5?'Start reviewing: ':'Review: ')+title,cls,type:'Review',due:rdue,diff:off>=5?'C':'D',done:false});reviews++;
+      S.tasks.push({id:uid(),uid:rk,src:'bs',auto:true,title:(off>=4?'Start reviewing: ':'Review: ')+title,cls,type:'Review',due:rdue,diff:off>=4?'C':'D',done:false});reviews++;
     });
   }
   S.bsLast=new Date().toISOString();S.bsCount=evs.length;
@@ -1066,6 +1344,12 @@ function achievements(){
     ['study10','Scholar','10 hours of study logged',R.cnt.studyMin>=600],
     ['study50','Sage','50 hours of study logged',R.cnt.studyMin>=3000],
     ['tasks25','Deadline Slayer','25 tasks finished on time',R.cnt.tasksOnTime>=25],
+    ['boss1','Boss Slayer','Defeat a weekly boss',R.cnt.bosses>=1],
+    ['boss10','Raid Leader','Defeat 10 weekly bosses',R.cnt.bosses>=10],
+    ['shield','Shielded','A streak shield saved your streak',st.daily.used.length>=1],
+    ['pomo25','Tomato Farmer','Finish 25 pomodoro rounds',R.cnt.pomo>=25],
+    ['book1','Bookworm','Finish a book',R.cnt.books>=1],
+    ['cards200','Card Shark','Review 200 flashcards',R.cnt.cards>=200],
     ['lv10','Level 10','Reach level 10',li>=10],
     ['lv25','Level 25','Reach level 25',li>=25],
     ['rankC',ST.rankName(4),`Reach ${ST.rankLabel(TIERS[4])} overall`,ov>=4],
@@ -1119,7 +1403,7 @@ function weightChart(days){
 }
 
 // ================= UI state =================
-const TABS=['home','train','fuel','school','calendar','stats','profile'];
+const TABS=['home','train','fuel','school','calendar','stats','profile','shop','party'];
 let tab=lsGet('ascension-tab')||'home';if(!TABS.includes(tab))tab='home';
 if(location.hash&&TABS.includes(location.hash.slice(1)))tab=location.hash.slice(1);
 let sub={train:'log',fuel:'today',school:'tasks'};
@@ -1144,6 +1428,8 @@ const skillSelect=(id,val)=>`<select name="${id}" id="${id}"><option value="">No
 const classSelect=(id,val)=>`<select name="${id}" id="${id}"><option value="">No class</option>${S.classes.map(c=>`<option value="${c.id}" ${c.id===val?'selected':''}>${esc(c.name)}</option>`).join('')}</select>`;
 const classOf=id=>S.classes.find(c=>c.id===id);
 const delBtn=(act,id,label)=>`<button class="icon-btn" data-act="${act}" data-id="${id}" aria-label="Delete ${esc(label)}">${ICON.trash}</button>`;
+const editBtn=(kind,id,label,dk)=>`<button class="icon-btn" data-act="edit" data-kind="${kind}" data-id="${id}"${dk?` data-k="${dk}"`:''} aria-label="Edit ${esc(label)}">${ICON.edit}</button>`;
+const btns=(...b)=>`<div class="rowbtns">${b.join('')}</div>`;
 
 // ================= HOME =================
 function hunterCard(){
@@ -1151,7 +1437,7 @@ function hunterCard(){
   const ini=(S.name||'H').trim().charAt(0).toUpperCase()||'H';
   return `<section class="win bracket hunter">
     <div class="emblem" aria-hidden="true"><div class="ring"></div><div class="ring2"></div><div class="core">${esc(ini)}</div></div>
-    <div style="min-width:0"><div class="hname">${esc(S.name||ST.person)}</div><div class="htitle">${esc(S.title||autoTitle())}</div><div class="streak num">${ICON.flame}${st} Day${st===1?'':'s'}</div></div>
+    <div style="min-width:0"><div class="hname">${esc(S.name||ST.person)}</div><div class="htitle">${esc(S.title||autoTitle())}</div><div class="streak num">${ICON.flame}${st} Day${st===1?'':'s'}${shieldIcons(R.streak.daily.shields)}</div><button class="coins num" data-act="tab" data-k="shop" style="background:none;border:0;padding:4px 0 0" aria-label="${fmtN(R.coins)} coins. Open reward shop">${ICON.coin}${fmtN(R.coins)}</button></div>
     <div class="rankbox">${hex(ov)}<div class="gname">${esc(ov)}</div><div class="lbl num">Level ${li.L}</div></div>
     <div style="grid-column:1/-1"><div class="xpbar"><i style="width:${(li.rem/li.need*100).toFixed(1)}%"></i></div>
       <div class="xpline num"><span>${li.rem} / ${li.need} XP to Level ${li.L+1}</span><span>${fmtN(R.total)} total XP</span></div></div>
@@ -1188,13 +1474,19 @@ function questCard(q){
 }
 function renderHome(){
   const t=today(),sch=scheduledOn(t),off=S.quests.filter(q=>!sch.includes(q)),h=S.hist[t]||{a:{}},dn=sch.filter(q=>h.a&&h.a[q.id]).length;
-  const y=addDays(t,-1),pen=y>=S.created&&scheduledOn(y).length&&!(S.hist[y]&&S.hist[y].clr)&&S.dismissed!==y;
-  const R=C(),up=S.tasks.filter(x=>!x.done).sort((a,b)=>(a.due||'9')<(b.due||'9')?-1:1).slice(0,4);
+  const R=C(),y=addDays(t,-1),missed=y>=S.created&&scheduledOn(y).length&&!(S.hist[y]&&S.hist[y].clr)&&S.dismissed!==y;
+  const shielded=missed&&R.streak.daily.used.includes(y),pen=missed&&!shielded;
+  const wkNow=weekKey(t),dow=parseKey(t).getDay(),repWk=dow===0?wkNow:dow===1?addDays(wkNow,-7):null,showRep=repWk&&S.reportSeen!==repWk&&repWk>=weekKey(startKey());
+  const up=S.tasks.filter(x=>!x.done).sort((a,b)=>(a.due||'9')<(b.due||'9')?-1:1).slice(0,4);
   return `${topbar('Status window')}
-  ${pen?`<section class="win banner"><div class="row between wrap"><div class="grow"><div class="lbl">[ Penalty ]</div><b>Yesterday's daily quest was not cleared.</b><div class="note">Your daily streak reset. Clear today's quests to start a new one.</div></div><button class="btn ghost" data-act="dismisspen" data-k="${y}">Dismiss</button></div></section>`:''}
+  ${pen?`<section class="win banner"><div class="row between wrap"><div class="grow"><div class="lbl">[ Penalty ]</div><b>Yesterday's daily quest was not cleared.</b><div class="note">Your daily streak reset. Clear today's quests to start a new one. Every 7 days in a row earns a streak shield that covers a missed day.</div></div><button class="btn ghost" data-act="dismisspen" data-k="${y}">Dismiss</button></div></section>`:''}
+  ${shielded?`<section class="win"><div class="row between wrap"><div class="grow"><div class="lbl">[ Shield ]</div><b>${ICON.shield.replace('<svg','<svg style="width:16px;height:16px;vertical-align:-2px;color:var(--glow)"')} A streak shield covered yesterday.</b><div class="note">Your ${R.streak.daily.cur}-day streak is safe. ${R.streak.daily.shields} shield${R.streak.daily.shields===1?'':'s'} left.</div></div><button class="btn ghost" data-act="dismisspen" data-k="${y}">OK</button></div></section>`:''}
+  ${showRep?`<section class="win"><div class="row between wrap"><div class="grow"><div class="lbl">[ Weekly report ]</div><b>${dow===0?"This week's":"Last week's"} report is ready.</b><div class="note">What improved, what slipped, and your best day.</div></div><button class="btn pri" data-act="report" data-k="${repWk}">Open</button></div></section>`:''}
   ${hunterCard()}${clockPanel()}
   <div class="streaks">${PATHK.map(p=>`<div class="sk" style="--pc:${PATHS[p].col}"><b class="num">${ICON.flame}${R.streak[p].cur}</b><span>${PATHS[p].name} · ${PATHS[p].unit}s</span></div>`).join('')}</div>
   ${pathTiles()}
+  ${bossCard(R.boss[wkNow]||bossFor(wkNow,R),false)}
+  ${partyHomeCard()}
   <div class="sectionhead"><h2>Daily Quests</h2><button class="addfab" data-act="qnew" aria-label="Add quest">${ICON.plus}</button></div>
   ${sch.length?`<div class="clearbar ${dn===sch.length?'ok':''} num"><span>${dn}/${sch.length} cleared</span><div class="xpbar"><i style="width:${dn/sch.length*100}%"></i></div><span>${h.clr?'Cleared':'+25 XP on clear'}</span></div>`:''}
   <div class="quests">${sch.length?sch.map(questCard).join(''):`<div class="empty">No quests scheduled today. Rest days don't break your streak.<br><br><button class="btn pri" data-act="qnew">Add a quest</button></div>`}</div>
@@ -1214,7 +1506,8 @@ function renderTrain(){
     const h=S.hist[selDate]||{},list=h.w||[];
     if(!exRows)exRows=defaultRows();
     const recent=[];for(const k of Object.keys(S.hist).sort().reverse()){for(const w of (S.hist[k].w||[])){if(w.name&&!recent.some(r=>r.name===w.name))recent.push(w)}if(recent.length>=5)break}
-    body=`<section class="win stack"><div class="row between wrap"><h3>Week of ${esc(shortDate(wk))}</h3><div class="row" style="gap:6px"><span class="note">Target</span><button class="btn sm" data-act="wkt" data-d="-1" aria-label="Lower weekly target">−</button><b class="num">${S.wkTarget}</b><button class="btn sm" data-act="wkt" data-d="1" aria-label="Raise weekly target">+</button><span class="note">a week</span></div></div>
+    body=`${S.routines.length?`<section class="win stack"><h3>Start a routine</h3><div class="qchips">${S.routines.map(r=>`<button type="button" data-act="rostart" data-id="${r.id}" class="${activeRoutine===r.id?'on':''}">${esc(r.name)}<b>${r.ex.length} ex</b></button>`).join('')}</div>${activeRoutine?`<div class="note">${esc((S.routines.find(r=>r.id===activeRoutine)||{}).name||'')} loaded below with suggested weights. Adjust to what you actually lift.</div>`:''}</section>`:''}
+    <section class="win stack"><div class="row between wrap"><h3>Week of ${esc(shortDate(wk))}</h3><div class="row" style="gap:6px"><span class="note">Target</span><button class="btn sm" data-act="wkt" data-d="-1" aria-label="Lower weekly target">−</button><b class="num">${S.wkTarget}</b><button class="btn sm" data-act="wkt" data-d="1" aria-label="Raise weekly target">+</button><span class="note">a week</span></div></div>
       <div class="week">${days.map(k=>`<div><i class="${(R.days[k]||{}).wo?'on':''} ${k===t?'today':''}"></i>${DOW[parseKey(k).getDay()]}</div>`).join('')}</div>
       <div class="note">Hitting ${S.wkTarget} workouts in a week gives +40 XP and extends your week streak.</div></section>
     ${dateBar()}
@@ -1224,19 +1517,105 @@ function renderTrain(){
       <div class="field"><label for="wo_name">Name</label><input id="wo_name" name="name" placeholder="${woType==='cardio'?'Easy run':woType==='sport'?'Basketball':woType==='mobility'?'Yoga':'Push day'}" maxlength="40"></div>
       <div class="field"><label for="wo_min">Duration (min)</label><input id="wo_min" name="min" type="number" min="1" max="600" placeholder="60" inputmode="numeric"></div>
       ${woType==='strength'?`<div class="full stack" style="gap:6px"><div class="exhead"><span class="flabel">Exercise</span><span class="flabel">Sets</span><span class="flabel">Reps</span><span class="flabel">${S.unit}</span></div>
-        ${exRows.map((r,i)=>`<div class="exrow"><input name="ex_n" list="exlist" placeholder="Exercise" value="${esc(r.n)}" aria-label="Exercise ${i+1}"><input name="ex_s" type="number" min="1" placeholder="3" value="${esc(r.s)}" aria-label="Sets ${i+1}" inputmode="numeric"><input name="ex_r" type="number" min="1" placeholder="8" value="${esc(r.r)}" aria-label="Reps ${i+1}" inputmode="numeric"><input name="ex_w" type="number" min="0" step="0.5" placeholder="0" value="${esc(r.w)}" aria-label="Weight ${i+1}" inputmode="decimal"></div>`).join('')}
-        <div><button type="button" class="btn sm ghost" data-act="exadd">+ Add exercise</button></div>
+        ${exRows.map((r,i)=>{const sg=r.n.trim()?suggest(r.n,+r.r||0):null;return `<div class="exrow"><input name="ex_n" list="exlist" placeholder="Exercise" value="${esc(r.n)}" aria-label="Exercise ${i+1}"><input name="ex_s" type="number" min="1" placeholder="3" value="${esc(r.s)}" aria-label="Sets ${i+1}" inputmode="numeric"><input name="ex_r" type="number" min="1" placeholder="8" value="${esc(r.r)}" aria-label="Reps ${i+1}" inputmode="numeric"><input name="ex_w" type="number" min="0" step="0.5" placeholder="${sg&&sg.w!=null?sg.w:0}" value="${esc(r.w)}" aria-label="Weight ${i+1}" inputmode="decimal"></div>${sg?`<div class="hint">${esc(sg.txt)}</div>`:''}`}).join('')}
+        <div class="row wrap" style="gap:8px"><button type="button" class="btn sm ghost" data-act="exadd">+ Add exercise</button><button type="button" class="btn sm ghost" data-act="rosave">Save as routine</button></div>
         <div class="note">Bench, squat, deadlift, overhead press and pull-up sets of 12 reps or fewer update your records with an estimated one-rep max.</div></div>`:''}
       ${woType==='cardio'?`<div class="field"><label for="wo_km">Distance (km)</label><input id="wo_km" name="km" type="number" min="0" step="0.01" placeholder="5" inputmode="decimal"></div><div class="field"><span class="flabel">&nbsp;</span><span class="note">A 5 km or 1 mile run with a time also updates your AGI records.</span></div>`:''}
       ${recent.length?`<div class="full"><span class="flabel">Repeat a recent workout</span><div class="qchips" style="margin-top:4px">${recent.map((w,i)=>`<button type="button" data-act="worepeat" data-i="${i}">${esc(w.name)}<b>${w.min?w.min+'m':''}</b></button>`).join('')}</div></div>`:''}
       <div class="full row between wrap"><span class="note">XP: 15 + 0.4 per minute + 1 per set.</span><button class="btn pri" type="submit">Log workout</button></div>
     </form>
-    <section class="stack"><h3>Workouts on ${esc(shortDate(selDate))}</h3>${list.length?list.map(w=>{const sets=wSets(w);return `<div class="item"><div class="hex xs t${w.type==='strength'?'B':w.type==='cardio'?'D':w.type==='sport'?'S':'A'}" aria-hidden="true">${esc(w.type.charAt(0).toUpperCase())}</div><div style="min-width:0"><div class="tt">${esc(w.name||w.type)}</div><div class="sub num">${w.min?fmtDur(w.min):''}${w.km?' · '+w.km+' km':''}${sets?' · '+sets+' sets':''}</div>${w.ex?`<div class="sub">${w.ex.map(e=>`${esc(e.name)} ${e.sets}×${e.reps}${e.kg?' @ '+fmtW(e.kg):''}`).join(' · ')}</div>`:''}</div>${delBtn('wodel',w.id,w.name||'workout')}</div>`}).join(''):'<div class="empty">No workouts logged this day.</div>'}</section>`;
+    ${woType==='strength'?gymTools():''}
+    <section class="stack"><h3>Workouts on ${esc(shortDate(selDate))}</h3>${list.length?list.map(w=>{const sets=wSets(w);return `<div class="item"><div class="hex xs t${w.type==='strength'?'B':w.type==='cardio'?'D':w.type==='sport'?'S':'A'}" aria-hidden="true">${esc(w.type.charAt(0).toUpperCase())}</div><div style="min-width:0"><div class="tt">${esc(w.name||w.type)}</div><div class="sub num">${w.min?fmtDur(w.min):''}${w.km?' · '+w.km+' km':''}${sets?' · '+sets+' sets':''}</div>${w.ex?`<div class="sub">${w.ex.map(e=>`${esc(e.name)} ${e.sets}×${e.reps}${e.kg?' @ '+fmtW(e.kg):''}`).join(' · ')}</div>`:''}</div>${btns(editBtn('wo',w.id,w.name||'workout',selDate),delBtn('wodel',w.id,w.name||'workout'))}</div>`}).join(''):'<div class="empty">No workouts logged this day.</div>'}</section>`;
     recentWorkouts=recent;
-  }else body=renderRecords();
-  return `${topbar('Training')}${pathHeader('train',extra)}${subtabs('train',[['log','Log'],['records','Records & ranks']])}${body}`;
+  }else if(sub.train==='routines')body=renderRoutines();
+  else if(sub.train==='progress')body=renderProgress();
+  else body=renderRecords();
+  return `${topbar('Training')}${pathHeader('train',extra)}${subtabs('train',[['log','Log'],['routines','Routines'],['progress','Progress'],['records','Records & ranks']])}${body}`;
 }
-let recentWorkouts=[];
+let recentWorkouts=[],activeRoutine='',restT=null;
+// ================= routines, progression, rest timer, plates =================
+const LOWER=/squat|deadlift|leg press|rdl|romanian|hip thrust|lunge/i;
+function lastPerf(name,before){
+  const n=name.trim().toLowerCase();if(!n)return null;
+  for(const k of Object.keys(S.hist).sort().reverse()){
+    if(before&&k>=before)continue;
+    for(const w of [...(S.hist[k].w||[])].reverse())for(const e of w.ex||[]){if(e.name.trim().toLowerCase()===n)return {kg:e.kg||0,reps:e.reps||0,sets:e.sets||0,d:k}}
+  }
+  return null;
+}
+function suggest(name,targetReps){
+  const l=lastPerf(name,selDate);if(!l)return null;
+  const lb=S.unit==='lb',cur=lb?Math.round(l.kg*KG_LB/2.5)*2.5:r1(l.kg),unit=S.unit;
+  if(!l.kg)return {w:null,txt:`Last time: ${l.sets}×${l.reps}. Try ${l.reps+1} reps per set.`};
+  const tr=targetReps||l.reps,inc=LOWER.test(name)?(lb?10:5):(lb?5:2.5);
+  const hit=l.reps>=tr,next=hit?r1(cur+inc):cur;
+  return {w:next,txt:`You did ${cur} ${unit} × ${l.reps} last time${hit?`, try ${next} ${unit}`:`. Stay at ${cur} ${unit} and aim for ${tr} reps`}.`};
+}
+function loadRoutine(r){
+  activeRoutine=r.id;woType='strength';
+  exRows=r.ex.map(e=>{const sg=suggest(e.name,e.reps);return {n:e.name,s:e.sets,r:e.reps,w:sg&&sg.w!=null?sg.w:''}});
+  if(!exRows.length)exRows=defaultRows();
+}
+function parseRoutineLines(txt){
+  return String(txt).split(/\n/).map(l=>l.trim()).filter(Boolean).map(l=>{const m=/^(.*?)[\s,:-]+(\d+)\s*[x×*]\s*(\d+)\s*$/i.exec(l);return m?{name:m[1].trim().slice(0,40),sets:+m[2],reps:+m[3]}:{name:l.slice(0,40),sets:3,reps:8}}).filter(e=>e.name);
+}
+function renderRoutines(){
+  return `<section class="stack">${S.routines.length?S.routines.map(r=>`<div class="win stack" style="padding:12px"><div class="row between wrap"><div><div style="font-weight:700">${esc(r.name)}</div><div class="note">${r.last?'Last done '+esc(shortDate(r.last)):'Not done yet'}</div></div><div class="rowbtns"><button class="btn sm pri" data-act="rostart" data-id="${r.id}">Start</button>${editBtn('routine',r.id,r.name)}${delBtn('rodel',r.id,r.name)}</div></div>
+      ${r.ex.map(e=>{const sg=suggest(e.name,e.reps);return `<div style="font-size:.86rem"><b>${esc(e.name)}</b> <span class="num note">${e.sets}×${e.reps}</span>${sg?`<div class="hint">${esc(sg.txt)}</div>`:''}</div>`}).join('')}</div>`).join(''):'<div class="empty">No routines yet. Save one below, or fill in a strength workout on the Log tab and tap Save as routine.</div>'}</section>
+  <form class="win form" data-form="routine" autocomplete="off"><div class="full"><h3>New routine</h3></div>
+    <div class="field full"><label for="ro_n">Name</label><input id="ro_n" name="n" placeholder="e.g. Push day" maxlength="40" required></div>
+    <div class="field full"><label for="ro_x">Exercises, one per line</label><textarea id="ro_x" name="x" placeholder="Bench Press 4x6&#10;Overhead Press 3x8&#10;Tricep Pushdown 3x12" style="font-family:inherit;font-size:.9rem" required></textarea></div>
+    <div class="full row between wrap"><span class="note">Weights are suggested from your last session: hit all your reps and it adds ${S.unit==='lb'?'5 lb (10 lb for legs)':'2.5 kg (5 kg for legs)'}.</span><button class="btn pri" type="submit">Save routine</button></div></form>
+  <section class="win stack"><h3>Push / Pull / Legs</h3><p class="note">Want a starting point? Add a classic three-day split.</p><div><button class="btn" data-act="roppl">Add Push, Pull and Legs</button></div></section>`;
+}
+const PPL=[['Push',[['Bench Press',4,6],['Overhead Press',3,8],['Incline Dumbbell Press',3,10],['Lateral Raise',3,15],['Tricep Pushdown',3,12]]],['Pull',[['Deadlift',3,5],['Pull-ups',3,8],['Barbell Row',3,8],['Lat Pulldown',3,10],['Bicep Curl',3,12]]],['Legs',[['Back Squat',4,6],['Romanian Deadlift',3,8],['Leg Press',3,10],['Lunges',3,10],['Plank',3,1]]]];
+const restInner=()=>`<span class="t num" id="resttime">${restText()}</span>${[60,90,120,180].map(s=>`<button type="button" class="btn sm" data-act="rest" data-v="${s}">${s<120?s+'s':s/60+' min'}</button>`).join('')}${restT?'<button type="button" class="btn sm ghost" data-act="rest" data-v="0">Stop</button>':''}`;
+function restText(){if(!restT)return '0:00';const s=Math.max(0,Math.ceil((restT.end-Date.now())/1000));return Math.floor(s/60)+':'+pad(s%60)}
+function restTick(){
+  if(!restT)return;const el=$('#resttime');if(el)el.textContent=restText();
+  if(!restT.rang&&Date.now()>=restT.end){restT.rang=true;notify('Rest over','Time for your next set.');const w=$('#restbox');if(w)w.classList.add('ding')}
+}
+function platesFor(total){
+  const lb=S.unit==='lb',bar=+(($('#pl_bar')||{}).value||(lb?45:20)),set=lb?[45,35,25,10,5,2.5]:[25,20,15,10,5,2.5,1.25];
+  let side=(total-bar)/2;if(!(total>0))return '';if(side<0)return `<span class="note">Less than the bar (${bar} ${S.unit}).</span>`;
+  const out=[];for(const p of set){while(side>=p-1e-9){out.push(p);side-=p}}
+  return `<div class="note">Each side:</div><div class="plates">${out.length?out.map(p=>`<span>${p}</span>`).join(''):'<span class="note">Just the bar</span>'}</div>${side>.01?`<div class="note" style="color:var(--warn)">${r1(side*2)} ${S.unit} can't be made with standard plates.</div>`:''}`;
+}
+function gymTools(){
+  return `<section class="win stack"><h3>Rest timer</h3><div class="rest ${restT&&restT.rang?'ding':''}" id="restbox">${restInner()}</div>
+    <details><summary>Plate calculator</summary><div class="row wrap" style="gap:8px;margin-top:8px"><div class="field" style="flex:1;min-width:120px"><label for="pl_t">Target (${S.unit})</label><input id="pl_t" type="number" min="0" step="0.5" inputmode="decimal" placeholder="${S.unit==='lb'?185:80}"></div><div class="field" style="flex:1;min-width:120px"><label for="pl_bar">Bar</label><select id="pl_bar">${(S.unit==='lb'?[45,35,15]:[20,15,10]).map(b=>`<option value="${b}">${b} ${S.unit}${b===(S.unit==='lb'?45:20)?' (standard)':''}</option>`).join('')}</select></div></div><div id="pl_out" class="stack" style="gap:6px;margin-top:8px"></div></details></section>`;
+}
+function liftSeries(name){
+  const n=name.toLowerCase(),byDay={};
+  for(const k in S.hist)for(const w of S.hist[k].w||[])for(const e of w.ex||[]){if(e.name.trim().toLowerCase()!==n||!(e.kg>0)||!e.reps)continue;const est=e.reps===1?e.kg:e.kg*(1+Math.min(e.reps,12)/30);const d=byDay[k]||(byDay[k]={e1:0,top:0,reps:0});if(est>d.e1)d.e1=est;if(e.kg>d.top||(e.kg===d.top&&e.reps>d.reps)){d.top=e.kg;d.reps=e.reps}}
+  for(const key of ['bench','squat','deadlift','ohp'])if(BM[key].re.test(name))for(const r of S.bm[key]||[]){if(r.est)continue;const d=byDay[r.d]||(byDay[r.d]={e1:0,top:0,reps:0});if(r.v>d.e1)d.e1=r.v;if(r.v>d.top){d.top=r.v;d.reps=1}}
+  return Object.keys(byDay).sort().map(k=>Object.assign({k},byDay[k]));
+}
+function lineChart(pts,o){
+  if(pts.length<2)return `<div class="empty">${esc(o.empty||'Log this on at least two days to see a chart.')}</div>`;
+  const W=560,H=200,pl=44,pb=22,pt=10,t0=parseKey(pts[0].k),span=Math.max(1,dayDiff(pts[pts.length-1].k,pts[0].k));
+  const vs=pts.flatMap(p=>o.keys.map(k=>p[k]).filter(v=>v>0));let lo=Math.min(...vs),hi=Math.max(...vs);const padv=Math.max(1,(hi-lo)*.12);lo-=padv;hi+=padv;const step=niceStep((hi-lo)/3);lo=Math.floor(lo/step)*step;hi=Math.ceil(hi/step)*step;
+  const x=k=>pl+(W-pl-8)*dayDiff(k,pts[0].k)/span,y=v=>pt+(H-pb-pt)*(1-(v-lo)/(hi-lo));
+  let g='';for(let v=lo;v<=hi+1e-9;v+=step)g+=`<line x1="${pl}" x2="${W}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="#2a2c40"/><text x="${pl-6}" y="${(y(v)+4).toFixed(1)}" text-anchor="end" fill="#b4ada3" font-size="10" font-family="sans-serif">${o.fmt(v)}</text>`;
+  o.keys.forEach((k,i)=>{const ps=pts.filter(p=>p[k]>0);g+=`<polyline points="${ps.map(p=>x(p.k).toFixed(1)+','+y(p[k]).toFixed(1)).join(' ')}" fill="none" stroke="${o.colors[i]}" stroke-width="2.5"/>`;ps.forEach(p=>g+=`<circle cx="${x(p.k).toFixed(1)}" cy="${y(p[k]).toFixed(1)}" r="3" fill="${o.colors[i]}"><title>${esc(shortDate(p.k))}: ${o.fmt(p[k])}</title></circle>`)});
+  [pts[0].k,pts[pts.length-1].k].forEach((k,i)=>g+=`<text x="${x(k).toFixed(1)}" y="${H-6}" text-anchor="${i?'end':'start'}" fill="#b4ada3" font-size="10" font-family="sans-serif">${esc(parseKey(k).toLocaleDateString(undefined,{month:'short',day:'numeric'}))}</text>`);
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.aria)}">${g}</svg>${legend(o.keys.map((k,i)=>[o.colors[i],o.labels[i]]))}`;
+}
+let liftSel='';
+function renderProgress(){
+  const names={};for(const k in S.hist)for(const w of S.hist[k].w||[])for(const e of w.ex||[])if(e.kg>0){const n=e.name.trim();const key=n.toLowerCase();if(!names[key])names[key]={n,c:0};names[key].c++}
+  ['bench','squat','deadlift','ohp'].forEach(k=>{if((S.bm[k]||[]).some(r=>!r.est)){const key=BM[k].name.toLowerCase();if(!Object.keys(names).some(x=>BM[k].re.test(x)))names[key]={n:BM[k].name,c:1}}});
+  const list=Object.values(names).sort((a,b)=>b.c-a.c);
+  if(!list.length)return '<div class="empty">Log strength workouts with weights to see each lift\'s progress here.</div>';
+  if(!list.some(x=>x.n===liftSel))liftSel=list[0].n;
+  const pts=liftSeries(liftSel),cv=v=>S.unit==='lb'?v*KG_LB:v,f=v=>Math.round(v)+'';
+  const shown=pts.map(p=>({k:p.k,e1:cv(p.e1),top:cv(p.top)}));
+  const best=pts.reduce((m,p)=>p.e1>m.e1?p:m,{e1:0}),heavy=pts.reduce((m,p)=>p.top>m.top?p:m,{top:0});
+  return `<section class="win stack"><h3>Lift</h3><select id="liftsel" aria-label="Exercise">${list.map(x=>`<option ${x.n===liftSel?'selected':''}>${esc(x.n)}</option>`).join('')}</select>
+    <div class="kv"><div><b class="num">${best.e1?fmtW(best.e1):'—'}</b><span>Best est. 1RM${best.k?' · '+esc(shortDate(best.k)):''}</span></div><div><b class="num">${heavy.top?fmtW(heavy.top)+' × '+heavy.reps:'—'}</b><span>Heaviest set</span></div><div><b class="num">${pts.length}</b><span>Sessions</span></div></div>
+    ${lineChart(shown,{keys:['e1','top'],colors:['#ffc53d','#4fd18b'],labels:['Estimated 1RM','Top set weight'],fmt:f,aria:liftSel+' progress',empty:'Log this lift on two different days to see a chart.'})}
+    <p class="note">Estimated one-rep max uses the Epley formula on sets of 12 reps or fewer. Weights in ${S.unit}.</p></section>`;
+}
 function renderRecords(){
   const recRows=Object.keys(BM).map(k=>{const b=BM[k],best=bmBest(k),tf=bmTier(k),est=(S.bm[k]||[]).some(r=>r.v===best&&r.est);
     return `<div class="rec">${tf==null?'<div class="hex xs none">–</div>':hex(tierName(tf),'xs')}<div style="min-width:0"><div class="rn">${esc(b.name)} <span class="chip ${b.stat}">${b.stat}</span></div><div class="rb num">Best: ${fmtBm(k,best)}${est?' (estimated)':''}${b.lower?' · lower is better':''}</div></div>
@@ -1270,6 +1649,10 @@ function renderFuel(){
         <div class="note">${on?'On target. +20 XP for this day.':`Land within 10% (${fmtN(dt.k*.9)}–${fmtN(dt.k*1.1)} kcal) to count as on target.`}</div>
         <div class="row" style="margin-top:10px;gap:8px"><span class="flabel">Water</span><div class="water" aria-label="${wa} of ${S.waterTarget} glasses">${[...Array(Math.max(S.waterTarget,wa))].map((_,i)=>`<span class="${i<wa?'on':''}"></span>`).join('')}</div></div>
         <div class="row" style="margin-top:6px;gap:6px"><button class="btn sm" data-act="water" data-d="-1" aria-label="Remove a glass">−</button><button class="btn sm" data-act="water" data-d="1">+ Glass</button><span class="note num">${wa}/${S.waterTarget}</span></div></div></section>
+    <section class="win stack"><div class="row between wrap"><h3>Find a food</h3><span class="note">Adds to ${esc(meal)}</span></div>
+      <form class="row" data-form="offsearch" style="gap:8px" autocomplete="off"><input id="off_q" name="q" placeholder="Search, e.g. Clif bar" maxlength="80" aria-label="Search foods" style="flex:1" value="${esc(off.q)}"><button class="btn" type="submit">Search</button><button class="btn" type="button" data-act="scan" aria-label="Scan a barcode">Scan</button></form>
+      <div id="offbox" class="stack" style="gap:6px">${offBox()}</div>
+      ${S.meals.length?`<div><span class="flabel">Saved meals</span><div class="qchips" style="margin-top:4px">${S.meals.map(m=>`<button type="button" data-act="mealadd" data-id="${m.id}">${esc(m.name)}<b>${fmtN(m.items.reduce((n,x)=>n+(+x.k||0),0))}</b></button>`).join('')}<button type="button" data-act="mealmanage" style="border-style:dashed">Manage</button></div></div>`:''}</section>
     <form class="win form" data-form="food" autocomplete="off">
       <div class="full"><h3>Log food</h3></div><div class="full seg">${MEALS.map(m=>`<button type="button" data-act="meal" data-v="${m}" class="${meal===m?'on':''}" aria-pressed="${meal===m}">${m}</button>`).join('')}</div>
       <div class="field full"><label for="fd_n">Food</label><input id="fd_n" name="n" placeholder="e.g. Chicken burrito" maxlength="60" required></div>
@@ -1280,7 +1663,7 @@ function renderFuel(){
       <div class="full"><span class="flabel">Quick add to ${esc(meal)}</span><div class="qchips" style="margin-top:4px">${quick.map((q,i)=>`<button type="button" data-act="quickfood" data-i="${i}">${esc(q[0])}<b>${Math.round(q[1])}</b></button>`).join('')}</div></div>
       <div class="full row between wrap"><span class="note">Values for common foods are typical averages. Check the label when you have one.</span><button class="btn pri" type="submit">Add food</button></div>
     </form>
-    ${MEALS.map(m=>{const es=(h.f||[]).filter(e=>(e.m||'Snack')===m);if(!es.length)return '';const sum=es.reduce((a,e)=>a+(+e.k||0),0);return `<section class="stack"><div class="row between"><h3>${m}</h3><span class="note num">${fmtN(sum)} kcal</span></div>${es.map(e=>`<div class="item"><span class="dot" style="background:var(--p-fuel)"></span><div style="min-width:0"><div class="tt">${esc(e.n)}</div><div class="sub num">${fmtN(e.k)} kcal · P ${r1(e.p||0)} · C ${r1(e.c||0)} · F ${r1(e.f||0)}</div></div>${delBtn('fooddel',e.id,e.n)}</div>`).join('')}</section>`}).join('')}
+    ${MEALS.map(m=>{const es=(h.f||[]).filter(e=>(e.m||'Snack')===m);if(!es.length)return '';const sum=es.reduce((a,e)=>a+(+e.k||0),0);return `<section class="stack"><div class="row between"><h3>${m}</h3><div class="row" style="gap:8px"><span class="note num">${fmtN(sum)} kcal</span><button class="btn sm ghost" data-act="mealsave" data-v="${m}">Save meal</button></div></div>${es.map(e=>`<div class="item"><span class="dot" style="background:var(--p-fuel)"></span><div style="min-width:0"><div class="tt">${esc(e.n)}</div><div class="sub num">${fmtN(e.k)} kcal · P ${r1(e.p||0)} · C ${r1(e.c||0)} · F ${r1(e.f||0)}</div></div>${btns(editBtn('food',e.id,e.n,selDate),delBtn('fooddel',e.id,e.n))}</div>`).join('')}</section>`}).join('')}
     ${!(h.f||[]).length?`<div class="empty">${h.fs?`Summary only: ${fmtN(h.fs.k)} kcal from ${h.fs.n} entries.`:'Nothing logged for this day.'}</div>`:''}`;
     quickFoods=quick;
   }else if(sub.fuel==='weight'){
@@ -1315,6 +1698,87 @@ function renderFuel(){
   return `${topbar('Nutrition')}${pathHeader('fuel',`<span>Goal <b>${S.goal==='cut'?'Cut':S.goal==='bulk'?'Bulk':'Maintain'}</b></span>`)}${subtabs('fuel',[['today','Food log'],['weight','Weight'],['goal','Goal & targets']])}${body}`;
 }
 let quickFoods=[];
+// ================= Open Food Facts search + barcode =================
+const OFF='https://world.openfoodfacts.org';
+const OFF_FIELDS='code,product_name,brands,nutriments,serving_quantity,serving_size';
+let off={q:'',res:null,busy:false,err:'',pick:null};
+function offNorm(p){
+  const n=p.nutriments||{},kcal=n['energy-kcal_100g']!=null?+n['energy-kcal_100g']:n.energy_100g!=null?+n.energy_100g/4.184:null;
+  if(kcal==null||!isFinite(kcal))return null;
+  const pn=String(p.product_name||'').trim(),br=String((Array.isArray(p.brands)?p.brands[0]:String(p.brands||'').split(',')[0])||'').trim();
+  return {code:p.code,name:(br&&!pn.toLowerCase().includes(br.toLowerCase())?pn+' · '+br:pn).slice(0,60)||'Food '+p.code,k:kcal,p:+n.proteins_100g||0,c:+n.carbohydrates_100g||0,f:+n.fat_100g||0,serv:+p.serving_quantity||0,servTxt:p.serving_size||''};
+}
+function offBox(){
+  if(off.busy)return '<div class="note">Searching Open Food Facts…</div>';
+  if(off.err)return `<div class="note" style="color:var(--warn)">${esc(off.err)}</div>`;
+  if(off.pick){const p=off.pick,g=off.g||p.serv||100,m=g/100;
+    return `<div class="res" style="grid-template-columns:1fr"><div><b>${esc(p.name)}</b><small>Per 100 g: ${Math.round(p.k)} kcal · P ${r1(p.p)} · C ${r1(p.c)} · F ${r1(p.f)}${p.servTxt?' · serving '+esc(p.servTxt):''}</small></div>
+      <div class="row wrap" style="gap:8px"><div class="field" style="width:120px"><label for="off_g">Amount (g)</label><input id="off_g" type="number" min="1" max="5000" value="${g}" inputmode="decimal"></div><div class="note num" id="off_calc" style="align-self:flex-end">${Math.round(p.k*m)} kcal · P ${r1(p.p*m)} · C ${r1(p.c*m)} · F ${r1(p.f*m)}</div></div>
+      <div class="row" style="gap:8px"><button class="btn pri" data-act="offadd">Add</button><button class="btn ghost" data-act="offback">Back</button></div></div>`}
+  if(off.res){if(!off.res.length)return '<div class="note">No matches with calorie data. Try other words, or type it in below.</div>';
+    return off.res.map((p,i)=>`<button class="res" data-act="offpick" data-i="${i}"><span><b>${esc(p.name)}</b><small>per 100 g · P ${r1(p.p)} · C ${r1(p.c)} · F ${r1(p.f)}</small></span><b class="num">${Math.round(p.k)}</b></button>`).join('')+'<div class="note">Data from Open Food Facts, a free community database. Check the label when it matters.</div>'}
+  return '';
+}
+const offPaint=()=>{const b=$('#offbox');if(b)b.innerHTML=offBox();else render()};
+async function offSearch(q){
+  off={q,res:null,busy:true,err:'',pick:null};offPaint();
+  try{
+    const r=await fetch(`https://search.openfoodfacts.org/search?q=${encodeURIComponent(q)}&page_size=24&fields=${OFF_FIELDS}`);
+    if(!r.ok)throw new Error(r.status===429?'busy':'http');
+    const j=await r.json();off.res=(j.hits||j.products||[]).map(offNorm).filter(Boolean).slice(0,12);
+  }catch(e){off.err=e.message==='busy'?'Open Food Facts is busy. Wait a minute and try again.':navigator.onLine===false?'You are offline. Food search needs a connection; type the food in below.':'Search failed. Check your connection or type the food in below.'}
+  off.busy=false;offPaint();
+}
+async function offBarcode(code){
+  code=String(code).replace(/\D/g,'');if(code.length<6){sys('Check the barcode','That doesn\'t look like a product barcode.');return}
+  if(sub.fuel!=='today'||tab!=='fuel'){tab='fuel';sub.fuel='today';render()}
+  off={q:'',res:null,busy:true,err:'',pick:null};offPaint();
+  try{
+    const r=await fetch(`${OFF}/api/v2/product/${code}.json?fields=${OFF_FIELDS}`);const j=await r.json();
+    const p=j&&j.product?offNorm(Object.assign({code},j.product)):null;
+    if(!p){off.err=`Barcode ${code} isn't in Open Food Facts with calorie data. Type the food in below.`}else{off.pick=p;off.g=p.serv||100}
+  }catch(e){off.err='Lookup failed. Check your connection and try again.'}
+  off.busy=false;offPaint();
+}
+let scanStop=null;
+async function openScanner(){
+  $('#modal').hidden=false;
+  $('#modal').innerHTML=`<div class="overlay" data-act="close"><div class="win bracket stack" role="dialog" aria-modal="true" aria-label="Scan barcode"><div class="row between"><h2>Scan barcode</h2><button type="button" class="icon-btn" data-act="close" aria-label="Close">✕</button></div>
+    <div class="scan"><video id="scanv" playsinline muted autoplay></video></div><div class="note" id="scanmsg">Starting camera…</div>
+    <form class="row" data-form="barcode" style="gap:8px" autocomplete="off"><input name="code" inputmode="numeric" placeholder="Or type the barcode number" aria-label="Barcode number" style="flex:1"><button class="btn" type="submit">Look up</button></form></div></div>`;
+  const v=$('#scanv'),msg=t=>{const m=$('#scanmsg');if(m)m.textContent=t};
+  const done=code=>{stopScan();closeModal();offBarcode(code)};
+  try{
+    if('BarcodeDetector' in window){
+      const det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128']});
+      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      v.srcObject=stream;await v.play();msg('Point the camera at the barcode.');
+      let live=true;scanStop=()=>{live=false;stream.getTracks().forEach(t=>t.stop())};
+      const loop=async()=>{if(!live)return;try{const r=await det.detect(v);if(r&&r[0]){done(r[0].rawValue);return}}catch(e){}setTimeout(loop,250)};loop();
+    }else{
+      msg('Loading scanner…');
+      await loadScript('https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js');
+      const reader=new ZXing.BrowserMultiFormatReader();scanStop=()=>{try{reader.reset()}catch(e){}};
+      msg('Point the camera at the barcode.');
+      reader.decodeFromConstraints({video:{facingMode:'environment'}},v,(res)=>{if(res)done(res.getText())});
+    }
+  }catch(e){msg('Camera unavailable. Allow camera access, or type the number below.')}
+}
+function stopScan(){if(scanStop){try{scanStop()}catch(e){}scanStop=null}}
+function loadScript(src){return new Promise((ok,bad)=>{if(document.querySelector(`script[src="${src}"]`)){const w=()=>window.ZXing||window.supabase?ok():setTimeout(w,50);return w()}const sc=document.createElement('script');sc.src=src;sc.async=true;sc.onload=ok;sc.onerror=()=>bad(new Error('load'));document.head.appendChild(sc)})}
+function openMealSave(meal){
+  const es=((S.hist[selDate]||{}).f||[]).filter(e=>(e.m||'Snack')===meal);if(!es.length)return;
+  $('#modal').hidden=false;
+  $('#modal').innerHTML=`<div class="overlay" data-act="close"><form class="win bracket stack" data-form="mealsave" data-v="${meal}" autocomplete="off" role="dialog" aria-modal="true" aria-label="Save meal"><div class="row between"><h2>Save meal</h2><button type="button" class="icon-btn" data-act="close" aria-label="Close">✕</button></div>
+    <div class="note">${es.map(e=>esc(e.n)).join(', ')} · ${fmtN(es.reduce((n,e)=>n+(+e.k||0),0))} kcal</div>
+    <div class="field"><label for="ms_n">Name</label><input id="ms_n" name="n" value="${esc('Usual '+meal.toLowerCase())}" maxlength="40" required></div><button class="btn pri" type="submit">Save</button></form></div>`;
+  setTimeout(()=>{const n=$('#ms_n');if(n){n.focus();n.select()}},30);
+}
+function openMealManage(){
+  $('#modal').hidden=false;
+  $('#modal').innerHTML=`<div class="overlay" data-act="close"><div class="win bracket stack" role="dialog" aria-modal="true" aria-label="Saved meals"><div class="row between"><h2>Saved meals</h2><button type="button" class="icon-btn" data-act="close" aria-label="Close">✕</button></div>
+    ${S.meals.map(m=>`<div class="item"><span class="dot" style="background:var(--p-fuel)"></span><div style="min-width:0"><div class="tt">${esc(m.name)}</div><div class="sub">${m.items.map(x=>esc(x.n)).join(', ')} · ${fmtN(m.items.reduce((n,x)=>n+(+x.k||0),0))} kcal</div></div>${delBtn('mealdel',m.id,m.name)}</div>`).join('')||'<div class="note">None saved.</div>'}</div></div>`;
+}
 function defaultMeal(){const h=new Date().getHours();return h<11?'Breakfast':h<15?'Lunch':h<21?'Dinner':'Snack'}
 
 // ================= SCHOOL =================
@@ -1333,7 +1797,7 @@ function taskRow(tk){
     <button class="check ${tk.done?'on':''}" data-act="ttoggle" data-id="${tk.id}" aria-label="${tk.done?'Undo':'Complete'} ${esc(tk.title)}" aria-pressed="${!!tk.done}">${ICON.check}</button>
     <div style="min-width:0"><div class="tt">${c?`<span class="dot" style="background:${esc(c.color)}"></span>`:''}${esc(tk.title)}</div><div class="sub ${dl.cls}">${esc(dl.txt)}${c?' · '+esc(c.name):''}</div>
       <div class="chips"><span class="chip plain">${esc(tk.type||'Task')}</span><span class="chip plain">${esc(DLAB[tk.diff]||tk.diff)}</span><span class="chip INT num">+${tk.done&&tk.award?tk.award.xp:d.xp} XP</span>${tk.src==='bs'?'<span class="chip bs">Brightspace</span>':''}</div></div>
-    ${delBtn('tdel',tk.id,tk.title)}</div>`;
+    ${btns(editBtn('task',tk.id,tk.title),delBtn('tdel',tk.id,tk.title))}</div>`;
 }
 function brightspaceCard(){
   const hasPass=!!lsGet(PASS_KEY);
@@ -1371,22 +1835,200 @@ function renderSchool(){
     const byCls={};days.forEach(k=>(S.hist[k]&&S.hist[k].s||[]).forEach(s=>{byCls[s.cls||'']=(byCls[s.cls||'']||0)+(+s.min||0)}));
     const totalWk=Object.values(byCls).reduce((a,b)=>a+b,0);
     const ss=(S.hist[selDate]&&S.hist[selDate].s)||[];
-    body=`<section class="win stack" style="align-items:center;text-align:center"><h3>Study timer</h3>
-      <div class="timer num" id="timer">${running?fmtClock((Date.now()-running.start)/1000):'00:00:00'}</div>
-      ${running?`<div class="note">${esc((classOf(running.cls)||{name:'General study'}).name)}</div><button class="btn pri" data-act="tstop">Stop and log</button><button class="btn sm ghost" data-act="tcancel">Discard</button>`:`<div class="row wrap" style="justify-content:center">${classSelect('tm_cls',S.classes[0]?S.classes[0].id:'')}<button class="btn pri" data-act="tstart">Start</button></div>`}
-      <div class="note">Every study minute gives 0.3 XP (up to 4 hours a day) and builds INT and that class's rank.</div></section>
+    body=`${studyTimerHTML()}
     ${dateBar()}
     <form class="win form" data-form="study" autocomplete="off"><div class="field"><label for="st_cls">Class</label>${classSelect('st_cls',S.classes[0]?S.classes[0].id:'')}</div><div class="field"><label for="st_min">Minutes</label><input id="st_min" name="min" type="number" min="1" max="600" placeholder="45" required inputmode="numeric"></div><div class="full row between wrap"><span class="note">Add a session for ${esc(shortDate(selDate))}.</span><button class="btn" type="submit">Add session</button></div></form>
-    <section class="stack"><h3>Sessions on ${esc(shortDate(selDate))}</h3>${ss.length?ss.map(s=>{const c=classOf(s.cls);return `<div class="item"><span class="dot" style="background:${c?esc(c.color):'var(--p-school)'}"></span><div><div class="tt">${esc(c?c.name:'General study')}</div><div class="sub num">${fmtDur(s.min)}</div></div>${delBtn('studydel',s.id,'session')}</div>`}).join(''):'<div class="empty">No study sessions this day.</div>'}</section>
+    <section class="stack"><h3>Sessions on ${esc(shortDate(selDate))}</h3>${ss.length?ss.map(s=>{const c=classOf(s.cls);return `<div class="item"><span class="dot" style="background:${c?esc(c.color):'var(--p-school)'}"></span><div><div class="tt">${esc(c?c.name:'General study')}</div><div class="sub num">${fmtDur(s.min)}</div></div>${btns(editBtn('study',s.id,'session',selDate),delBtn('studydel',s.id,'session'))}</div>`}).join(''):'<div class="empty">No study sessions this day.</div>'}</section>
     <section class="win stack"><div class="row between"><h3>This week</h3><span class="note num">${fmtDur(totalWk)} total</span></div>${Object.keys(byCls).length?Object.entries(byCls).sort((a,b)=>b[1]-a[1]).map(([id,m])=>{const c=classOf(id);return `<div class="macro" style="grid-template-columns:minmax(0,1fr) 120px 56px"><span style="overflow-wrap:anywhere">${esc(c?c.name:'General study')}</span><div class="pbar" style="--pc:${c?esc(c.color):'var(--p-school)'}"><i style="width:${(m/Math.max(...Object.values(byCls))*100).toFixed(0)}%"></i></div><span class="num">${fmtDur(m)}</span></div>`}).join(''):'<div class="note">No study logged this week yet.</div>'}</section>`;
-  }else{
+  }else if(sub.school==='grades')body=renderGrades();
+  else if(sub.school==='prep')body=renderPrep();
+  else if(sub.school==='books')body=renderBooks();
+  else{
     body=`<section class="win stack"><h3>Classes</h3>${S.classes.length?S.classes.map(c=>{const pts=R.cls[c.id]||0,tf=ptsTier(pts),tn=tierName(tf),open=S.tasks.filter(x=>x.cls===c.id&&!x.done).length;return `<div class="item">${hex(tn,'xs')}<div style="min-width:0"><div class="tt"><span class="dot" style="background:${esc(c.color)}"></span>${esc(c.name)}</div><div class="sub num">${fmtDur(R.clsMin[c.id]||0)} studied · ${open} open task${open===1?'':'s'} · ${r1(pts)} pts${c.src==='bs'?' · from Brightspace':''}</div><div class="mini"><i class="${tierCls(tn)}" style="width:${((tf%1)*100).toFixed(0)}%"></i></div></div>${delBtn('clsdel',c.id,c.name)}</div>`}).join(''):'<div class="note">No classes yet.</div>'}</section>
     <form class="win stack" data-form="class" autocomplete="off"><div class="field"><label for="cl_name">New class</label><input id="cl_name" name="name" placeholder="e.g. Calculus I" maxlength="60" required></div><div class="swatches" role="group" aria-label="Class colour">${CLASS_COLORS.map(c=>`<button type="button" data-act="swatch" data-v="${c}" class="${classColor===c?'on':''}" style="background:${c}" aria-label="Colour ${c}" aria-pressed="${classColor===c}"></button>`).join('')}</div><div><button class="btn pri" type="submit">Add class</button></div></form>
     <section class="win stack"><h3>Skills</h3><p class="note">Skills level up from the daily quests you link to them, e.g. Guitar or Spanish.</p>${S.skills.map(sk=>{const p=R.skill[sk.id]||0,tf=ptsTier(p),tn=tierName(tf);return `<div class="item">${hex(tn,'xs')}<div style="min-width:0"><div class="tt">${esc(sk.name)} <span class="chip ${sk.stat}">${sk.stat}</span></div><div class="sub num">${r1(p)} pts</div><div class="mini"><i class="${tierCls(tn)}" style="width:${((tf%1)*100).toFixed(0)}%"></i></div></div>${delBtn('skdel',sk.id,sk.name)}</div>`}).join('')}
       <form class="row wrap" data-form="skill" style="gap:8px"><input id="sk_name" name="name" placeholder="New skill" maxlength="40" style="flex:2;min-width:140px" required>${statSelect('sk_stat','INT').replace('<select','<select style="flex:1;min-width:110px"')}<button class="btn" type="submit">Add skill</button></form></section>`;
   }
-  return `${topbar('School')}${pathHeader('school',`<span>Open tasks <b>${S.tasks.filter(x=>!x.done).length}</b></span>`)}${subtabs('school',[['tasks','Assignments'],['study','Study'],['classes','Classes & skills']])}${body}`;
+  return `${topbar('School')}${pathHeader('school',`<span>Open tasks <b>${S.tasks.filter(x=>!x.done).length}</b></span>`)}${subtabs('school',[['tasks','Assignments'],['study','Study'],['grades','Grades'],['prep','Exam prep'],['books','Books'],['classes','Classes & skills']])}${body}`;
 }
+// ================= grades =================
+let gradeCls='';
+const letter=p=>p==null?'—':p>=90?'A':p>=80?'B':p>=70?'C':p>=60?'D':'F';
+function gradeCalc(c){
+  const gr=Object.assign({cats:[],fw:0,target:90},c.gr||{}),items=S.grades.filter(g=>g.cls===c.id);
+  let pct=null,loose=0;
+  if(gr.cats.length){let ws=0,acc=0;gr.cats.forEach(cat=>{const its=items.filter(i=>i.cat===cat.id),m=its.reduce((n,i)=>n+(+i.m||0),0);if(m>0){acc+=cat.w*its.reduce((n,i)=>n+(+i.s||0),0)/m;ws+=cat.w}});
+    loose=items.filter(i=>!gr.cats.some(c2=>c2.id===i.cat)).length;if(ws>0)pct=acc/ws*100}
+  else{const m=items.reduce((n,i)=>n+(+i.m||0),0);if(m>0)pct=items.reduce((n,i)=>n+(+i.s||0),0)/m*100}
+  const fw=clamp(+gr.fw||0,0,100);let need=null;
+  if(fw>0&&fw<100&&pct!=null)need=(gr.target-pct*(1-fw/100))/(fw/100);
+  else if(fw===100)need=gr.target;
+  return {pct,need,fw,gr,items,loose};
+}
+function renderGrades(){
+  if(!S.classes.length)return '<div class="empty">Add a class in Classes & skills first.</div>';
+  if(!classOf(gradeCls))gradeCls=S.classes[0].id;
+  const c=classOf(gradeCls),g=gradeCalc(c),gr=g.gr;
+  const needTxt=g.need==null?(g.fw?'Enter a score to see what you need on the final.':'Set the final exam weight to see what you need on it.'):g.need>100?`Even 100% on the final gets you about ${r1(g.pct*(1-g.fw/100)+g.fw)}%. Your target of ${gr.target}% is out of reach this term.`:g.need<=0?`You've already locked in ${gr.target}%, even with a 0 on the final.`:`You need <b class="num">${r1(g.need)}%</b> on the final (worth ${g.fw}%) to finish with ${gr.target}%.`;
+  const all=S.classes.map(x=>{const q=gradeCalc(x);return `<button data-act="gcls" data-id="${x.id}" class="${x.id===c.id?'on':''}">${esc(x.name)}${q.pct!=null?' · '+Math.round(q.pct)+'%':''}</button>`}).join('');
+  const catName=id=>{const k=gr.cats.find(x=>x.id===id);return k?k.n:''};
+  return `<div class="subtabs">${all}</div>
+  <section class="win stack"><div class="row between wrap"><div><div class="lbl">Current grade</div><div class="grade num">${g.pct==null?'—':r1(g.pct)+'%'} <span style="font-size:1rem">${letter(g.pct)}</span></div></div><div class="note" style="max-width:300px">${needTxt}</div></div>
+    <div class="pbar" style="--pc:${esc(c.color)}"><i style="width:${g.pct==null?0:Math.min(100,g.pct).toFixed(0)}%"></i></div>
+    <form class="row wrap" data-form="gset" data-id="${c.id}" style="gap:8px"><div class="field" style="flex:1;min-width:110px"><label for="gs_t">Target %</label><input id="gs_t" name="target" type="number" min="1" max="110" value="${gr.target}"></div><div class="field" style="flex:1;min-width:110px"><label for="gs_f">Final exam weight %</label><input id="gs_f" name="fw" type="number" min="0" max="100" value="${gr.fw||''}" placeholder="e.g. 30"></div><button class="btn" type="submit" style="align-self:flex-end">Save</button></form>
+    ${g.loose?`<div class="note" style="color:var(--warn)">${g.loose} score${g.loose>1?'s are':' is'} not in a category and ${g.loose>1?'aren\'t':'isn\'t'} counted. Edit ${g.loose>1?'them':'it'} to pick one.</div>`:''}</section>
+  <section class="win stack"><h3>Categories</h3><p class="note">Optional. Use the weights from your syllabus, e.g. Homework 20, Quizzes 30, Midterm 20. Leave the final exam out; its weight goes above. With no categories, every point counts the same.</p>
+    ${gr.cats.map(k=>{const its=g.items.filter(i=>i.cat===k.id),m=its.reduce((n,i)=>n+(+i.m||0),0);return `<div class="item"><span class="dot" style="background:${esc(c.color)}"></span><div><div class="tt">${esc(k.n)} · ${k.w}%</div><div class="sub num">${its.length} score${its.length===1?'':'s'}${m?' · '+r1(its.reduce((n,i)=>n+(+i.s||0),0)/m*100)+'%':''}</div></div>${delBtn('gcatdel',k.id,k.n)}</div>`}).join('')}
+    <form class="row wrap" data-form="gcat" data-id="${c.id}" style="gap:8px"><input name="n" placeholder="Category" maxlength="30" required style="flex:2;min-width:120px" aria-label="Category name"><input name="w" type="number" min="1" max="100" placeholder="Weight %" required style="flex:1;min-width:90px" aria-label="Weight percent"><button class="btn" type="submit">Add</button></form></section>
+  <form class="win form" data-form="grade" data-id="${c.id}" autocomplete="off"><div class="full"><h3>Add a score</h3></div>
+    <div class="field full"><label for="gr_n">Name</label><input id="gr_n" name="n" placeholder="e.g. Quiz 3" maxlength="60" required></div>
+    <div class="field"><label for="gr_s">Score</label><input id="gr_s" name="s" type="number" min="0" step="0.01" placeholder="18" required inputmode="decimal"></div>
+    <div class="field"><label for="gr_m">Out of</label><input id="gr_m" name="m" type="number" min="0.01" step="0.01" placeholder="20" required inputmode="decimal"></div>
+    ${gr.cats.length?`<div class="field"><label for="gr_c">Category</label><select id="gr_c" name="cat">${gr.cats.map(k=>`<option value="${k.id}">${esc(k.n)}</option>`).join('')}</select></div>`:''}
+    <div class="field"><label for="gr_d">Date</label><input id="gr_d" name="d" type="date" value="${today()}"></div>
+    <div class="full row between wrap"><span class="note">Brightspace's calendar feed doesn't include grades, so add them here as you get them back.</span><button class="btn pri" type="submit">Add score</button></div></form>
+  <section class="stack"><h3>Scores</h3>${g.items.length?[...g.items].sort((a,b)=>(b.d||'')<(a.d||'')?-1:1).map(i=>`<div class="item"><b class="num" style="min-width:48px">${i.m?Math.round(i.s/i.m*100):0}%</b><div style="min-width:0"><div class="tt">${esc(i.n)}</div><div class="sub num">${r1(i.s)}/${r1(i.m)}${catName(i.cat)?' · '+esc(catName(i.cat)):''}${i.d?' · '+esc(shortDate(i.d)):''}</div></div>${btns(editBtn('grade',i.id,i.n),delBtn('grdel',i.id,i.n))}</div>`).join(''):'<div class="empty">No scores yet.</div>'}</section>`;
+}
+
+// ================= exam prep: spaced reviews + flashcards =================
+const REVIEW_OFFS={Test:[7,4,2,1],Quiz:[2,1]};
+const BOX_DAYS=[0,1,2,4,8,16,32];
+function scheduleReviews(tk){
+  const offs=REVIEW_OFFS[tk.type];if(!offs||!tk.due||tk.done)return 0;
+  const t=today();let n=0;
+  offs.forEach(off=>{
+    const rdue=addDays(tk.due,-off),ex=S.tasks.find(x=>x.rid===tk.id&&x.off===off);
+    if(ex){if(!ex.done)ex.due=rdue;return}
+    if(rdue<t)return;
+    S.tasks.push({id:uid(),rid:tk.id,off,auto:true,title:(off>=4?'Start reviewing: ':'Review: ')+tk.title,cls:tk.cls,type:'Review',due:rdue,diff:off>=4?'C':'D',done:false,src:tk.src});n++;
+  });
+  return n;
+}
+const reviewsOf=tk=>S.tasks.filter(x=>x.rid===tk.id||(tk.uid&&x.uid&&x.uid.indexOf(tk.uid+'#review')===0));
+function nextExam(cls){const t=today();return S.tasks.filter(x=>x.cls===cls&&!x.done&&(x.type==='Test'||x.type==='Quiz')&&x.due&&x.due>=t).sort((a,b)=>a.due<b.due?-1:1)[0]}
+const dueCards=cls=>{const t=today();return S.cards.filter(c=>(cls==null||c.cls===cls)&&(c.due||'')<=t)};
+function renderPrep(){
+  const t=today(),exams=S.tasks.filter(x=>!x.done&&(x.type==='Test'||x.type==='Quiz')&&x.due&&x.due>=t).sort((a,b)=>a.due<b.due?-1:1);
+  const decks=S.classes.map(c=>{const all=S.cards.filter(x=>x.cls===c.id),due=dueCards(c.id).length,ex=nextExam(c.id);
+    return `<div class="item"><span class="dot" style="background:${esc(c.color)}"></span><div style="min-width:0"><div class="tt">${esc(c.name)}</div><div class="sub num">${all.length} card${all.length===1?'':'s'} · ${due} due${ex?` · ${esc(ex.type)} in ${dayDiff(ex.due,t)} day${dayDiff(ex.due,t)===1?'':'s'}`:''}</div></div><div class="rowbtns">${all.length?`<button class="btn sm ${due?'pri':''}" data-act="fcstart" data-id="${c.id}" ${due?'':'data-all="1"'}>${due?'Review '+due:'Practise all'}</button><button class="icon-btn" data-act="fclist" data-id="${c.id}" aria-label="Manage ${esc(c.name)} cards">${ICON.dots}</button>`:''}</div></div>`}).join('');
+  return `<section class="win stack"><h3>Upcoming tests</h3>${exams.length?exams.map(x=>{const rv=reviewsOf(x).sort((a,b)=>a.due<b.due?-1:1),c=classOf(x.cls),n=dayDiff(x.due,t),cards=S.cards.filter(k=>k.cls===x.cls).length;
+      return `<div class="item"><span class="dot" style="background:${c?esc(c.color):'var(--p-school)'}"></span><div style="min-width:0"><div class="tt">${esc(x.title)}</div><div class="sub ${n<=2?'soon':''}">${esc(x.type)} · ${n===0?'today':n===1?'tomorrow':'in '+n+' days'}${c?' · '+esc(c.name):''}</div>
+        <div class="chips">${rv.length?rv.map(r=>`<span class="chip ${r.done?'INT':'plain'} num">${r.done?'✓ ':''}${esc(parseKey(r.due).toLocaleDateString(undefined,{weekday:'short',day:'numeric'}))}</span>`).join(''):'<span class="chip plain">No reviews planned</span>'}${cards?`<span class="chip plain">${cards} cards</span>`:''}</div></div>
+        ${rv.length?'<span></span>':`<button class="btn sm" data-act="planrev" data-id="${x.id}">Plan reviews</button>`}</div>`}).join(''):'<div class="note">No tests or quizzes coming up. Add one in Assignments with the type Test or Quiz and review sessions are planned for you.</div>'}
+    <p class="note">Tests get review sessions 7, 4, 2 and 1 days before; quizzes 2 and 1 days before. They show up as tasks. While a test is coming, flashcards for that class are scheduled so they all come up before the test day.</p></section>
+  <section class="win stack"><div class="row between"><h3>Flashcards</h3><span class="note num">${dueCards().length} due today</span></div>${decks||'<div class="note">Add a class first.</div>'}
+    <p class="note">Cards you get right come back after 1, 2, 4, 8, 16 then 32 days. Cards you miss go back to the start and repeat in the same session. 1 XP per card reviewed (up to 40 a day).</p></section>
+  <form class="win form" data-form="card" autocomplete="off"><div class="full"><h3>Add cards</h3></div>
+    <div class="field full"><label for="fc_cls">Class</label>${classSelect('fc_cls',S.classes[0]?S.classes[0].id:'')}</div>
+    <div class="field"><label for="fc_q">Front</label><input id="fc_q" name="q" placeholder="Question or term" maxlength="300"></div>
+    <div class="field"><label for="fc_a">Back</label><input id="fc_a" name="a" placeholder="Answer" maxlength="300"></div>
+    <details class="full"><summary>Add many at once</summary><textarea name="bulk" placeholder="One card per line: front | back&#10;Mitochondria | Powerhouse of the cell" style="margin-top:8px"></textarea></details>
+    <div class="full row between wrap"><span class="note">New cards are due today.</span><button class="btn pri" type="submit">Add</button></div></form>`;
+}
+let fc=null; // {cls, q:[ids], show, n, right}
+function fcStart(cls,all){
+  const ids=(all?S.cards.filter(c=>c.cls===cls):dueCards(cls)).map(c=>c.id);
+  for(let i=ids.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ids[i],ids[j]]=[ids[j],ids[i]]}
+  if(!ids.length)return;fc={cls,q:ids,show:false,n:0,right:0,practice:!!all};fcRender();
+}
+function fcRender(){
+  if(!fc)return;const card=S.cards.find(c=>c.id===fc.q[0]);
+  $('#modal').hidden=false;
+  if(!card){const n=fc.n,r=fc.right;fc=null;$('#modal').innerHTML=`<div class="overlay" data-act="close"><div class="win bracket stack" role="dialog" aria-modal="true" aria-label="Review done"><h2>Review complete</h2><p>${n} answer${n===1?'':'s'}, ${r} right first time.</p><button class="btn pri" data-act="close">Done</button></div></div>`;render();return}
+  const c=classOf(card.cls);
+  $('#modal').innerHTML=`<div class="overlay" data-act="close"><div class="win bracket stack" role="dialog" aria-modal="true" aria-label="Flashcard review"><div class="row between"><span class="note">${esc(c?c.name:'Cards')} · ${fc.q.length} left</span><button type="button" class="icon-btn" data-act="close" aria-label="Close">✕</button></div>
+    <div class="fcard"><div>${esc(card.q)}</div>${fc.show?`<div class="ans">${esc(card.a)}</div>`:''}</div>
+    ${fc.show?`<div class="row" style="gap:8px"><button class="btn danger grow" data-act="fcans" data-v="0">Missed it</button><button class="btn pri grow" data-act="fcans" data-v="1">Got it</button></div>`:`<button class="btn pri" data-act="fcshow">Show answer</button>`}</div></div>`;
+}
+function fcAnswer(ok){
+  const id=fc.q.shift(),card=S.cards.find(c=>c.id===id);if(!card)return fcRender();
+  const t=today(),b=snap();fc.n++;
+  if(ok){card.box=Math.min(BOX_DAYS.length-1,(card.box||0)+1);let due=addDays(t,BOX_DAYS[card.box]);const ex=nextExam(card.cls);if(ex&&addDays(ex.due,-1)>t&&due>=ex.due)due=addDays(ex.due,-1);card.due=due;if(!card.miss)fc.right++;delete card.miss}
+  else{card.box=0;card.due=t;card.miss=true;fc.q.splice(Math.min(fc.q.length,3),0,id)}
+  const h=day(t);h.fc=(h.fc||0)+1;
+  fc.show=false;save();announce(b);fcRender();
+}
+function renderCardList(cls){
+  const c=classOf(cls),list=S.cards.filter(x=>x.cls===cls);
+  $('#modal').hidden=false;
+  $('#modal').innerHTML=`<div class="overlay" data-act="close"><div class="win bracket stack" role="dialog" aria-modal="true" aria-label="Cards"><div class="row between"><h2>${esc(c?c.name:'Cards')}</h2><button type="button" class="icon-btn" data-act="close" aria-label="Close">✕</button></div>
+    ${list.map(k=>`<div class="item"><span class="chip plain num">Box ${k.box||0}</span><div style="min-width:0"><div class="tt">${esc(k.q)}</div><div class="sub">${esc(k.a)} · due ${esc(shortDate(k.due||today()))}</div></div>${delBtn('fcdel',k.id,k.q)}</div>`).join('')||'<div class="note">No cards.</div>'}</div></div>`;
+}
+
+// ================= books =================
+function renderBooks(){
+  const R=C(),rd=S.books.filter(b=>b.status==='reading'),want=S.books.filter(b=>b.status==='want'),done=S.books.filter(b=>b.status==='done').sort((a,b)=>(b.fin||'')<(a.fin||'')?-1:1);
+  const wk=weekKey(today());let pagesWk=0;for(let i=0;i<7;i++)pagesWk+=(R.days[addDays(wk,i)]||{}).read||0;
+  const star=b=>`<span class="rowbtns" role="group" aria-label="Rating">${[1,2,3,4,5].map(n=>`<button class="icon-btn" style="width:24px;height:24px;color:${(b.rating||0)>=n?'#ffc53d':'var(--dim)'}" data-act="bookrate" data-id="${b.id}" data-v="${n}" aria-label="Rate ${n} star${n>1?'s':''}">★</button>`).join('')}</span>`;
+  return `<div class="kv"><div><b class="num">${rd.length}</b><span>Reading now</span></div><div><b class="num">${fmtN(pagesWk)}</b><span>Pages this week</span></div><div><b class="num">${R.cnt.books}</b><span>Books finished</span></div></div>
+  <section class="stack"><h3>Reading now</h3>${rd.length?rd.map(b=>`<div class="win stack" style="padding:12px"><div class="row between wrap"><div style="min-width:0"><div style="font-weight:700;overflow-wrap:anywhere">${esc(b.title)}</div><div class="note">${esc(b.author||'')}${b.pages?` · page ${b.page||0} of ${b.pages}`:` · page ${b.page||0}`}</div></div>${btns(editBtn('book',b.id,b.title),delBtn('bookdel',b.id,b.title))}</div>
+      ${b.pages?`<div class="pbar" style="--pc:var(--p-school)"><i style="width:${Math.min(100,(b.page||0)/b.pages*100).toFixed(0)}%"></i></div>`:''}
+      <form class="row wrap" data-form="bookpage" data-id="${b.id}" style="gap:8px"><input name="page" type="number" min="0" ${b.pages?`max="${b.pages}"`:''} placeholder="Now on page…" inputmode="numeric" style="flex:1;min-width:120px" aria-label="Current page of ${esc(b.title)}"><button class="btn" type="submit">Update</button><button class="btn sm ghost" type="button" data-act="bookdone" data-id="${b.id}">Finished</button></form></div>`).join(''):'<div class="empty">Not reading anything. Add a book below or start one from your list.</div>'}</section>
+  <form class="win form" data-form="book" autocomplete="off"><div class="full"><h3>Add a book</h3></div>
+    <div class="field full"><label for="bk_t">Title</label><input id="bk_t" name="t" maxlength="100" required placeholder="e.g. Atomic Habits"></div>
+    <div class="field"><label for="bk_a">Author</label><input id="bk_a" name="a" maxlength="60"></div>
+    <div class="field"><label for="bk_p">Pages</label><input id="bk_p" name="p" type="number" min="1" max="10000" inputmode="numeric"></div>
+    <div class="field full"><span class="flabel">Status</span><div class="seg">${[['reading','Reading'],['want','Want to read'],['done','Finished']].map(([k,l],i)=>`<button type="button" data-act="seg" data-name="bk_s" data-v="${k}" class="${i===0?'on':''}" aria-pressed="${i===0}">${l}</button>`).join('')}</div><input type="hidden" name="bk_s" value="reading"></div>
+    <div class="full row between wrap"><span class="note">Pages read: 0.2 XP each (up to 30 a day). Finishing a book: +50 XP.</span><button class="btn pri" type="submit">Add book</button></div></form>
+  ${want.length?`<section class="stack"><h3>Want to read</h3>${want.map(b=>`<div class="item"><span class="dot" style="background:var(--dim)"></span><div style="min-width:0"><div class="tt">${esc(b.title)}</div><div class="sub">${esc(b.author||'')}${b.pages?' · '+b.pages+' pages':''}</div></div><div class="rowbtns"><button class="btn sm" data-act="bookstart" data-id="${b.id}">Start</button>${delBtn('bookdel',b.id,b.title)}</div></div>`).join('')}</section>`:''}
+  ${done.length?`<section class="stack"><h3>Finished</h3>${done.map(b=>`<div class="item"><span class="dot" style="background:var(--good)"></span><div style="min-width:0"><div class="tt">${esc(b.title)}</div><div class="sub">${esc(b.author||'')}${b.fin?' · finished '+esc(shortDate(b.fin)):''}</div>${star(b)}</div>${btns(editBtn('book',b.id,b.title),delBtn('bookdel',b.id,b.title))}</div>`).join('')}</section>`:''}`;
+}
+function logPages(b,newPage){
+  const t=today(),delta=Math.round(newPage-(b.page||0));
+  if(delta>0){const h=day(t);h.rd=(h.rd||0)+delta}
+  b.page=Math.max(0,Math.round(newPage));
+  if(b.pages&&b.page>=b.pages&&b.status!=='done'){b.status='done';b.fin=t;sys('Book finished',`${b.title}. +50 XP.`)}
+  return delta;
+}
+
+function timerText(){
+  const tm=S.timer;if(!tm)return '00:00:00';
+  if(tm.mode!=='pomo')return fmtClock((Date.now()-tm.start)/1000);
+  const len=(tm.phase==='work'?S.pomo.work:S.pomo.brk)*60;return fmtClock(Math.max(0,len-(Date.now()-tm.ps)/1000)).slice(3);
+}
+function studyTimerHTML(){
+  const tm=S.timer,R=C(),rounds=(R.days[today()]||{}).pomo||0;
+  if(tm){
+    const pomo=tm.mode==='pomo',ph=pomo?(tm.phase==='work'?'Focus':'Break'):'Studying';
+    return `<section class="win stack" style="align-items:center;text-align:center"><h3>${pomo?'Pomodoro · '+ph:'Study timer'}</h3>
+      <div class="timer num" id="timer" style="${pomo&&tm.phase==='brk'?'color:var(--good)':''}">${timerText()}</div>
+      <div class="note">${esc((classOf(tm.cls)||{name:'General study'}).name)}${pomo?` · round ${(tm.rounds||0)+(tm.phase==='work'?1:0)} · ${rounds} full round${rounds===1?'':'s'} today`:''}</div>
+      <div class="row wrap" style="justify-content:center"><button class="btn pri" data-act="tstop">${pomo?'Stop':'Stop and log'}</button><button class="btn sm ghost" data-act="tcancel">Discard</button></div>
+      ${pomo?`<div class="note">Each finished ${S.pomo.work}-minute round is logged for you with +10 bonus XP. Stopping mid-round logs the minutes without the bonus.</div>`:''}</section>`;
+  }
+  return `<section class="win stack" style="align-items:center;text-align:center"><h3>Study timer</h3>
+    <div class="timer num" id="timer">00:00:00</div>
+    <div class="row wrap" style="justify-content:center">${classSelect('tm_cls',S.classes[0]?S.classes[0].id:'')}</div>
+    <div class="row wrap" style="justify-content:center"><button class="btn pri" data-act="tstart" data-mode="pomo">Pomodoro ${S.pomo.work}/${S.pomo.brk}</button><button class="btn" data-act="tstart">Free timer</button></div>
+    <div class="row wrap" style="justify-content:center;gap:6px"><span class="note">Focus</span><select id="pm_work" aria-label="Focus minutes" style="width:auto">${[15,20,25,30,45,50].map(v=>`<option ${v===S.pomo.work?'selected':''}>${v}</option>`).join('')}</select><span class="note">Break</span><select id="pm_brk" aria-label="Break minutes" style="width:auto">${[3,5,10,15].map(v=>`<option ${v===S.pomo.brk?'selected':''}>${v}</option>`).join('')}</select><span class="note">min</span></div>
+    <div class="note">Every study minute gives 0.3 XP (up to 4 hours a day) and builds INT and that class's rank. Full pomodoro rounds add +10 XP each${rounds?` (${rounds} today)`:''}.</div></section>`;
+}
+// Advance a running pomodoro through any phases that ended (also catches up after the phone was locked).
+function pomoTick(){
+  const tm=S.timer;if(!tm||tm.mode!=='pomo')return;
+  let changed=false,guard=0;
+  while(guard++<50){
+    const len=(tm.phase==='work'?S.pomo.work:S.pomo.brk)*60000;
+    if(Date.now()-tm.ps<len)break;
+    const end=tm.ps+len;
+    if(tm.phase==='work'){
+      const dk=dkey(new Date(end-1000));tm.rounds=(tm.rounds||0)+1;const b=snap();
+      (day(dk).s=day(dk).s||[]).push({id:uid(),cls:tm.cls,min:S.pomo.work,pomo:1});
+      tm.phase='brk';tm.ps=end;changed=true;save();announce(b);
+      if(Date.now()-end<60000)notify('Round complete',`+${S.pomo.work} min and +10 bonus XP. Take a ${S.pomo.brk}-minute break.`);
+    }else{tm.phase='work';tm.ps=end;changed=true;if(Date.now()-end<60000)notify('Break over','Next focus round has started.')}
+  }
+  if(changed){save();render()}
+}
+function notify(title,body){
+  sys(title,body);
+  try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}
+  try{const a=new (window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+.35)}catch(e){}
+  if(document.hidden&&'Notification' in window&&Notification.permission==='granted'){
+    try{if(swReg)swReg.showNotification(title,{body,icon:'icon-192.png',tag:'ascension-timer'});else new Notification(title,{body})}catch(e){}
+  }
+}
+let swReg=null;
 const fmtClock=s=>{s=Math.max(0,Math.floor(s));return pad(Math.floor(s/3600))+':'+pad(Math.floor(s%3600/60))+':'+pad(s%60)};
 
 // ================= CALENDAR =================
@@ -1463,6 +2105,8 @@ function renderStats(){
   <section class="win stack"><h3>Bodyweight · 90 days</h3>${weightChart(90)}</section>
   <section class="win stack"><h3>Workouts per week</h3>${woChart}</section>
   <section class="win stack"><h3>Study hours per week</h3>${stChart}</section>
+  <section class="win stack"><h3>Weekly report</h3><p class="note">Every Sunday the Home screen shows a report: what improved, what slipped and your best day. Open any week here.</p><div class="row wrap" style="gap:8px"><button class="btn" data-act="report" data-k="${weekKey(t)}">This week</button><button class="btn" data-act="report" data-k="${addDays(weekKey(t),-7)}">Last week</button></div></section>
+  <section class="win stack"><h3>Weekly bosses</h3><div class="note">${c.bosses} defeated · ${R.streak.daily.shields}/${MAX_SHIELDS} streak shields held · ${fmtN(R.coins)} coins</div></section>
   <section class="win stack"><div class="row between"><h3>Achievements</h3><span class="note num">${got}/${ach.length}</span></div><div class="ach">${ach.map(a=>`<div class="${a.ok?'':'lock'}">${ICON.trophy}<div><b>${esc(a.name)}</b><span>${esc(a.desc)}</span></div></div>`).join('')}</div></section>`;
 }
 
@@ -1475,6 +2119,9 @@ function renderProfile(){
     <div class="field"><label for="pf_unit">Units</label><select id="pf_unit" name="unit"><option value="kg" ${S.unit==='kg'?'selected':''}>Kilograms</option><option value="lb" ${S.unit==='lb'?'selected':''}>Pounds</option></select></div>
     <div class="field"><label for="pf_sex">Strength standards</label><select id="pf_sex" name="sex"><option value="m" ${S.sex==='m'?'selected':''}>Male</option><option value="f" ${S.sex==='f'?'selected':''}>Female</option></select></div>
     <div class="full row between wrap"><span class="note">Age, height, weight and activity are on Nutrition → Goal.</span><button class="btn pri" type="submit">Save profile</button></div></form>
+  ${cloudCard()}
+  ${appCard()}
+  <section class="win stack"><div class="row between"><h3>Party</h3><button class="btn sm" data-act="tab" data-k="party">${S.party?'Open':'Set up'}</button></div><p class="note">${S.party?`You're in ${esc(S.party.name)} (code ${esc(S.party.code)}).`:'Share a leaderboard and a co-op weekly boss with friends.'}</p></section>
   <section class="win stack"><h3>Style</h3>
     <div class="seg" role="group" aria-label="App style">${Object.entries(STYLES).map(([k,v])=>`<button type="button" data-act="style" data-v="${k}" class="${ST===v?'on':''}" aria-pressed="${ST===v}">${v.label}</button>`).join('')}</div>
     <p class="note">System: blue status window with ranks E to SS+. Sorcerer: crimson ink with Grade 5 to Special Grade. Your progress is the same in both.</p></section>
@@ -1486,6 +2133,52 @@ function renderProfile(){
     <div id="resetconfirm" hidden class="win banner"><b>Erase all quests, stats, logs and history?</b><div class="row" style="margin-top:10px"><button class="btn danger" data-act="resetyes">Erase everything</button><button class="btn ghost" data-act="resetno">Keep my data</button></div></div></section>`;
 }
 
+// ================= shields, boss, shop, weekly report =================
+function shieldIcons(n){return `<span class="shields" title="${n} streak shield${n===1?'':'s'}" aria-label="${n} of ${MAX_SHIELDS} streak shields">${[...Array(MAX_SHIELDS)].map((_,i)=>ICON.shield.replace('<svg',`<svg class="${i<n?'':'off'}"`)).join('')}</span>`}
+function bossCard(b,coop,extra){
+  const hp=bossHp(b),left=7-Math.min(7,Math.max(0,dayDiff(today(),b.wk)));
+  return `<section class="win stack boss ${b.won?'won':''}"><div class="row between wrap"><div><div class="lbl">${coop?'Co-op boss':'Weekly boss'}${b.won?' · defeated':` · ${left} day${left===1?'':'s'} left`}</div><b style="font-family:var(--f-display);font-size:1.15rem">${ICON.skull.replace('<svg','<svg style="width:18px;height:18px;vertical-align:-3px;margin-right:4px"')}${esc(b.name)}</b></div><span class="note num">${b.won?'Cleared':`+${coop?COOP_XP:BOSS_XP} XP · +${coop?COOP_COINS:BOSS_COINS} coins`}</span></div>
+    <div class="bossbar" role="img" aria-label="Boss health ${Math.round(hp*100)}%"><i style="width:${(b.won?0:hp*100).toFixed(0)}%"></i></div>
+    ${b.goals.map(g=>`<div class="goal ${g.v>=g.n?'ok':''}"><span>${g.v>=g.n?'✓ ':''}${g.n}${g.u} ${esc(g.l)}</span><span class="num">${r1(Math.min(g.v,g.n*9))}${g.u} / ${g.n}${g.u}</span><div class="mini"><i style="width:${Math.min(100,g.v/g.n*100).toFixed(0)}%"></i></div></div>`).join('')}${extra||''}</section>`;
+}
+function renderShop(){
+  const R=C(),recent=[...S.buys].reverse().slice(0,10);
+  return `${topbar('Reward shop')}
+  <section class="win stack"><div class="row between wrap"><div><div class="lbl">Balance</div><div class="coins num" style="font-size:1.6rem">${ICON.coin.replace('<svg','<svg style="width:26px;height:26px"')}${fmtN(R.coins)}</div></div><div class="note" style="max-width:260px">Earn 1 coin per 10 XP and ${BOSS_COINS} for each weekly boss. Spend them on real-life rewards you set.</div></div></section>
+  <section class="stack"><h3>Rewards</h3>${S.rewards.length?S.rewards.map(r=>`<div class="item"><div class="coins num">${ICON.coin}${fmtN(r.cost)}</div><div style="min-width:0"><div class="tt">${esc(r.name)}</div><div class="sub">${R.coins>=r.cost?'Affordable now':`${fmtN(r.cost-R.coins)} more coins`}</div></div><div class="rowbtns"><button class="btn sm pri" data-act="buy" data-id="${r.id}" ${R.coins>=r.cost?'':'disabled'}>Redeem</button>${delBtn('rwdel',r.id,r.name)}</div></div>`).join(''):'<div class="empty">Add a reward below.</div>'}</section>
+  <form class="win form" data-form="reward" autocomplete="off"><div class="field"><label for="rw_n">New reward</label><input id="rw_n" name="n" placeholder="e.g. Movie night" maxlength="40" required></div><div class="field"><label for="rw_c">Cost (coins)</label><input id="rw_c" name="c" type="number" min="1" max="100000" placeholder="150" inputmode="numeric" required></div><div class="full row between wrap"><span class="note">Tip: price rewards so you earn one every few days of good work.</span><button class="btn pri" type="submit">Add reward</button></div></form>
+  <section class="stack"><h3>Redeemed</h3>${recent.length?recent.map(b=>`<div class="item"><span class="dot" style="background:#ffc53d"></span><div style="min-width:0"><div class="tt">${esc(b.name)}</div><div class="sub num">${esc(shortDate(b.d))} · ${fmtN(b.cost)} coins</div></div><span></span></div>`).join(''):'<div class="note">Nothing redeemed yet.</div>'}</section>`;
+}
+function weekStats(wk,R){
+  const t=today(),v={xp:0,wo:0,study:0,fuel:0,clr:0,tasks:0,pages:0,cards:0,kcal:0,kd:0,best:null,bestXp:0,wt:[]};
+  for(let i=0;i<7;i++){const k=addDays(wk,i);if(k>t)break;const d=R.days[k],h=S.hist[k];if(h&&h.wt)v.wt.push(h.wt);if(!d)continue;
+    const xp=PATHK.reduce((n,p)=>n+(d[p]||0),0);v.xp+=xp;v.wo+=d.wo||0;v.study+=(d.study||0)/60;v.fuel+=d.fuelOn?1:0;v.clr+=d.clr?1:0;v.tasks+=d.tasks||0;v.pages+=d.read||0;v.cards+=d.fc||0;
+    if(d.fuelN){v.kcal+=d.kcal;v.kd++}if(xp>v.bestXp){v.bestXp=xp;v.best=k}}
+  return v;
+}
+function reportHTML(wk){
+  const R=C(),a=weekStats(wk,R),b=weekStats(addDays(wk,-7),R),bs=R.boss[wk];
+  const rows=[['XP earned','xp',fmtN],['Workouts','wo',String],['Study hours','study',v=>r1(v)+'h'],['Days on calorie target','fuel',String],['Days all quests cleared','clr',String],['Tasks finished','tasks',String],['Pages read','pages',String],['Flashcards reviewed','cards',String]];
+  const up=[],down=[];
+  rows.forEach(([l,k])=>{if(a[k]>b[k]+1e-9)up.push(l);else if(a[k]<b[k]-1e-9)down.push(l)});
+  const bd=a.best&&R.days[a.best],bdBits=bd?[bd.clr&&'all quests cleared',bd.wo&&`${bd.wo} workout${bd.wo>1?'s':''}`,bd.study&&fmtDur(bd.study)+' studied',bd.fuelOn&&'on calorie target',bd.tasks&&`${bd.tasks} task${bd.tasks>1?'s':''} done`,bd.read&&bd.read+' pages read'].filter(Boolean):[];
+  const wch=a.wt.length>1?a.wt[a.wt.length-1]-a.wt[0]:null;
+  return `<div class="cmp"><span class="lbl">This week vs last</span><span class="lbl">Now</span><span class="lbl">Before</span>
+    ${rows.map(([l,k,f])=>{const d=a[k]-b[k];return `<span>${l}</span><b class="num ${d>1e-9?'up':d<-1e-9?'down':''}">${f(a[k])}${d>1e-9?' ▲':d<-1e-9?' ▼':''}</b><span class="num note">${f(b[k])}</span>`}).join('')}
+    <span>Average calories</span><b class="num">${a.kd?fmtN(a.kcal/a.kd):'—'}</b><span class="num note">${b.kd?fmtN(b.kcal/b.kd):'—'}</span></div>
+    <div><h4 style="color:var(--good);margin:6px 0 2px">Improved</h4><div class="note">${up.length?esc(up.join(', ')):'Nothing went up this week. A fresh start next week.'}</div></div>
+    <div><h4 style="color:var(--bad);margin:6px 0 2px">Slipped</h4><div class="note">${down.length?esc(down.join(', ')):'Nothing slipped. Well held.'}</div></div>
+    <div><h4 style="margin:6px 0 2px">Best day</h4><div class="note">${a.best?`${esc(parseKey(a.best).toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'}))}: ${fmtN(a.bestXp)} XP${bdBits.length?' · '+esc(bdBits.join(', ')):''}.`:'No activity logged yet.'}</div></div>
+    <div class="note">Weekly boss: ${bs?(bs.won?esc(bs.name)+' defeated.':esc(bs.name)+' survived ('+Math.round(bossHp(bs)*100)+'% health left).'):'—'}${wch!=null?` Bodyweight ${wch>0?'+':''}${fmtW(wch)} over the week.`:''}</div>`;
+}
+function openReport(wk){
+  if(S.reportSeen!==wk&&wk<=weekKey(today())){S.reportSeen=wk;save()}
+  $('#modal').hidden=false;
+  $('#modal').innerHTML=`<div class="overlay" data-act="close"><div class="win bracket stack" role="dialog" aria-modal="true" aria-label="Weekly report"><div class="row between"><h2>Week of ${esc(shortDate(wk))}</h2><button type="button" class="icon-btn" data-act="close" aria-label="Close">✕</button></div>${reportHTML(wk)}
+  <div class="row between"><button class="btn sm" data-act="report" data-k="${addDays(wk,-7)}">‹ Earlier week</button>${wk<weekKey(today())?`<button class="btn sm" data-act="report" data-k="${addDays(wk,7)}">Later week ›</button>`:''}</div></div></div>`;
+  render();
+}
+
 // ================= render =================
 function renderNav(){
   const items=[['home','Home'],['train','Train'],['fuel','Fuel'],['school','School'],['calendar','Calendar'],['stats','Stats']];
@@ -1494,7 +2187,7 @@ function renderNav(){
 function render(){
   const ae=document.activeElement,fid=ae&&ae.id,val=ae&&'value' in ae?ae.value:null;
   renderNav();
-  const v={home:renderHome,train:renderTrain,fuel:renderFuel,school:renderSchool,calendar:renderCalendar,stats:renderStats,profile:renderProfile}[tab]||renderHome;
+  const v={home:renderHome,train:renderTrain,fuel:renderFuel,school:renderSchool,calendar:renderCalendar,stats:renderStats,profile:renderProfile,shop:renderShop,party:renderParty}[tab]||renderHome;
   $('#app').innerHTML=v();
   if(fid&&fid!=='seldate'){const el=document.getElementById(fid);if(el&&el.tagName!=='BUTTON'){try{el.focus({preventScroll:true})}catch(e){}}}
 }
@@ -1519,6 +2212,54 @@ function openQuest(id){
   </form></div>`;
   setTimeout(()=>{const n=$('#q_name');if(n&&!id)n.focus()},30);
 }
+// ================= edit past entries =================
+function findEntry(kind,id,dk){
+  if(kind==='task')return S.tasks.find(x=>x.id===id);
+  if(kind==='grade')return S.grades.find(x=>x.id===id);
+  if(kind==='book')return S.books.find(x=>x.id===id);
+  if(kind==='routine')return S.routines.find(x=>x.id===id);
+  const h=S.hist[dk];if(!h)return null;
+  return ({food:h.f,study:h.s,wo:h.w}[kind]||[]).find(x=>x.id===id);
+}
+function openEdit(kind,id,dk){
+  const e=findEntry(kind,id,dk);if(!e)return;
+  const F=(nm,lb,v,attrs)=>`<div class="field"><label for="ed_${nm}">${lb}</label><input id="ed_${nm}" name="${nm}" value="${esc(v==null?'':v)}" ${attrs||''}></div>`;
+  let body='',title='';
+  if(kind==='food'){title='Edit food';body=`<div class="field full"><label for="ed_n">Food</label><input id="ed_n" name="n" value="${esc(e.n)}" maxlength="60" required></div>
+    <div class="field"><label for="ed_m">Meal</label><select id="ed_m" name="m">${MEALS.map(m=>`<option ${(e.m||'Snack')===m?'selected':''}>${m}</option>`).join('')}</select></div>
+    ${F('k','Calories',e.k,'type="number" min="0" inputmode="numeric" required')}${F('p','Protein (g)',e.p,'type="number" min="0" step="0.1"')}${F('c','Carbs (g)',e.c,'type="number" min="0" step="0.1"')}${F('f','Fat (g)',e.f,'type="number" min="0" step="0.1"')}`}
+  else if(kind==='study'){title='Edit study session';body=`<div class="field"><label for="ed_cls">Class</label>${classSelect('ed_cls',e.cls)}</div>${F('min','Minutes',e.min,'type="number" min="1" max="600" required')}`}
+  else if(kind==='task'){title='Edit task';body=`<div class="field full"><label for="ed_t">Title</label><input id="ed_t" name="title" value="${esc(e.title)}" maxlength="120" required></div>
+    <div class="field"><label for="ed_cls">Class</label>${classSelect('ed_cls',e.cls)}</div>
+    <div class="field"><label for="ed_type">Type</label><select id="ed_type" name="type">${TASK_TYPES.map(x=>`<option ${x===e.type?'selected':''}>${x}</option>`).join('')}</select></div>
+    ${F('due','Due',e.due,'type="date"')}<div class="field"><span class="flabel">Difficulty</span>${diffSeg('ed_diff',e.diff||'C')}</div>`}
+  else if(kind==='grade'){title='Edit score';const c=classOf(e.cls),cats=(c&&c.gr&&c.gr.cats)||[];body=`<div class="field full"><label for="ed_n">Name</label><input id="ed_n" name="n" value="${esc(e.n)}" maxlength="60" required></div>${F('s','Score',e.s,'type="number" min="0" step="0.01" required')}${F('m','Out of',e.m,'type="number" min="0.01" step="0.01" required')}
+    ${cats.length?`<div class="field"><label for="ed_cat">Category</label><select id="ed_cat" name="cat">${cats.map(k=>`<option value="${k.id}" ${k.id===e.cat?'selected':''}>${esc(k.n)}</option>`).join('')}</select></div>`:''}${F('d','Date',e.d,'type="date"')}`}
+  else if(kind==='book'){title='Edit book';body=`<div class="field full"><label for="ed_t">Title</label><input id="ed_t" name="title" value="${esc(e.title)}" maxlength="100" required></div>${F('author','Author',e.author,'maxlength="60"')}${F('pages','Pages',e.pages||'','type="number" min="0"')}${F('page','Current page',e.page||0,'type="number" min="0"')}${e.status==='done'?F('fin','Finished on',e.fin,'type="date"'):''}<div class="full note">Changing the current page here doesn't log reading XP. Use Update on the Books tab for that.</div>`}
+  else if(kind==='routine'){title='Edit routine';body=`<div class="field full"><label for="ed_n">Name</label><input id="ed_n" name="n" value="${esc(e.name)}" maxlength="40" required></div><div class="field full"><label for="ed_x">Exercises, one per line</label><textarea id="ed_x" name="x" style="font-family:inherit;font-size:.9rem">${esc(e.ex.map(x=>`${x.name} ${x.sets}x${x.reps}`).join('\n'))}</textarea></div>`}
+  else if(kind==='wo'){title='Edit workout';body=`${F('name','Name',e.name,'maxlength="40"')}${F('min','Duration (min)',e.min,'type="number" min="0" max="600"')}
+    ${e.type==='cardio'?F('km','Distance (km)',e.km,'type="number" min="0" step="0.01"'):''}
+    ${e.ex?`<div class="full stack" style="gap:6px"><div class="exhead"><span class="flabel">Exercise</span><span class="flabel">Sets</span><span class="flabel">Reps</span><span class="flabel">${S.unit}</span></div>${[...e.ex,{name:'',sets:'',reps:'',kg:''}].map((x,i)=>`<div class="exrow"><input name="ex_n" list="exlist" value="${esc(x.name)}" placeholder="Exercise" aria-label="Exercise ${i+1}"><input name="ex_s" type="number" min="0" value="${esc(x.sets)}" aria-label="Sets ${i+1}"><input name="ex_r" type="number" min="0" value="${esc(x.reps)}" aria-label="Reps ${i+1}"><input name="ex_w" type="number" min="0" step="0.5" value="${x.kg===''?'':r1(S.unit==='lb'?x.kg*KG_LB:x.kg)}" aria-label="Weight ${i+1}"></div>`).join('')}<div class="note">Clear an exercise name to remove it.</div></div>`:''}`}
+  $('#modal').hidden=false;
+  $('#modal').innerHTML=`<div class="overlay" data-act="close"><form class="win bracket form" data-form="edit" data-kind="${kind}" data-id="${id}" data-k="${dk||''}" autocomplete="off" role="dialog" aria-modal="true" aria-label="${title}">
+    <div class="full row between"><h2>${title}</h2><button type="button" class="icon-btn" data-act="close" aria-label="Close">✕</button></div>${body}
+    <div class="full row between wrap"><span class="note">${dk?esc(shortDate(dk)):''}</span><button class="btn pri" type="submit">Save changes</button></div></form></div>`;
+}
+function saveEdit(f,fd){
+  const kind=f.dataset.kind,id=f.dataset.id,dk=f.dataset.k,e=findEntry(kind,id,dk);if(!e)return closeModal();
+  const num=(k,d)=>{const v=fd.get(k);return v===''||v==null?d:Number(v)};
+  commit(()=>{
+    if(kind==='food'){e.n=String(fd.get('n')||e.n).trim().slice(0,60);e.m=fd.get('m')||e.m;e.k=Math.round(num('k',0));e.p=r1(num('p',0));e.c=r1(num('c',0));e.f=r1(num('f',0))}
+    else if(kind==='study'){e.cls=fd.get('ed_cls')||'';e.min=clamp(Math.round(num('min',e.min)),1,600)}
+    else if(kind==='task'){const oldDue=e.due;e.title=String(fd.get('title')||e.title).trim().slice(0,120);e.cls=fd.get('ed_cls')||'';e.type=fd.get('type')||e.type;e.due=fd.get('due')||'';e.diff=fd.get('ed_diff')||e.diff;if(e.due!==oldDue&&S.tasks.some(x=>x.rid===e.id))scheduleReviews(e)}
+    else if(kind==='routine'){e.name=String(fd.get('n')||e.name).trim().slice(0,40);const ex=parseRoutineLines(fd.get('x'));if(ex.length)e.ex=ex}
+    else if(kind==='grade'){e.n=String(fd.get('n')||e.n).trim().slice(0,60);e.s=num('s',e.s);e.m=Math.max(.01,num('m',e.m));if(fd.get('cat')!=null)e.cat=fd.get('cat');e.d=fd.get('d')||e.d}
+    else if(kind==='book'){e.title=String(fd.get('title')||e.title).trim().slice(0,100);e.author=String(fd.get('author')||'').trim().slice(0,60);e.pages=Math.max(0,Math.round(num('pages',0)));e.page=Math.max(0,Math.round(num('page',e.page||0)));if(fd.get('fin'))e.fin=fd.get('fin')}
+    else if(kind==='wo'){e.name=String(fd.get('name')||'').trim().slice(0,40)||e.name;e.min=Math.max(0,Math.round(num('min',0)));if(e.type==='cardio'){const km=num('km',0);if(km)e.km=r1(km*100)/100;else delete e.km}
+      if(e.ex){const g=n=>fd.getAll(n);const n=g('ex_n'),st=g('ex_s'),rp=g('ex_r'),w=g('ex_w');e.ex=n.map((x,i)=>({name:String(x).trim().slice(0,40),sets:+st[i]||0,reps:+rp[i]||0,kg:r1(inW(+w[i]||0))})).filter(x=>x.name&&x.sets>0)}}
+  },'Entry edited');
+  closeModal();
+}
 function closeModal(){$('#modal').hidden=true;$('#modal').innerHTML=''}
 function armed(el){if(el.dataset.sure==='1')return true;el.dataset.sure='1';el.classList.add('armed');el.setAttribute('aria-label','Tap again to confirm');setTimeout(()=>{if(el.isConnected){el.dataset.sure='';el.classList.remove('armed')}},2500);return false}
 function readExRows(){const f=$('#woform');if(!f)return;const g=n=>[...f.querySelectorAll(`[name="${n}"]`)].map(i=>i.value);const n=g('ex_n'),s=g('ex_s'),r=g('ex_r'),w=g('ex_w');exRows=n.map((_,i)=>({n:n[i],s:s[i],r:r[i],w:w[i]}))}
@@ -1536,35 +2277,84 @@ document.addEventListener('click',e=>{
     case 'goto':selDate=calSel;setTab(el.dataset.k);if(el.dataset.k==='school'){sub.school='study';render()}break;
     case 'dshift':{const n=addDays(selDate,+el.dataset.d);if(n<=today()){selDate=n;render()}break}
     case 'dtoday':selDate=today();render();break;
-    case 'qtoggle':{const q=S.quests.find(x=>x.id===id);if(q)setQuestAmount(q,isDone(q,today())?0:(q.target||1));break}
+    case 'qtoggle':{const q=S.quests.find(x=>x.id===id);if(q){const was=isDone(q,today());setQuestAmount(q,was?0:(q.target||1),`${q.name} ${was?'unchecked':'completed'}`)}break}
     case 'qstep':{const q=S.quests.find(x=>x.id===id);if(!q)break;const cur=((S.hist[today()]||{}).p||{})[id]||0;setQuestAmount(q,cur+Number(el.dataset.d)*(q.step||1));break}
     case 'qnew':openQuest('');break;
     case 'qedit':openQuest(id);break;
-    case 'close':closeModal();break;
+    case 'close':fc=null;stopScan();closeModal();break;
     case 'seg':{const f=el.closest('form');f.querySelectorAll(`[data-name="${el.dataset.name}"]`).forEach(b=>{b.classList.toggle('on',b===el);b.setAttribute('aria-pressed',b===el)});f.querySelector(`input[name="${el.dataset.name}"]`).value=el.dataset.v;break}
     case 'day':{el.classList.toggle('on');el.setAttribute('aria-pressed',el.classList.contains('on'));const f=el.closest('form');f.querySelector('input[name="days"]').value=[...f.querySelectorAll('.days button')].map((b,i)=>b.classList.contains('on')?i:-1).filter(i=>i>=0).join(',');break}
     case 'qmove':{const i=S.quests.findIndex(x=>x.id===id),j=i+Number(el.dataset.d);if(i<0||j<0||j>=S.quests.length)break;[S.quests[i],S.quests[j]]=[S.quests[j],S.quests[i]];save();render();openQuest(id);break}
     case 'qdel':{if(el.dataset.sure!=='1'){el.dataset.sure='1';el.textContent='Tap again to delete';break}
-      commit(()=>{const t=today(),h=S.hist[t];if(h&&h.a&&h.a[id])delete h.a[id];S.quests=S.quests.filter(x=>x.id!==id);if(h)checkClear(t)});closeModal();break}
+      commit(()=>{const t=today(),h=S.hist[t];if(h&&h.a&&h.a[id])delete h.a[id];S.quests=S.quests.filter(x=>x.id!==id);if(h)checkClear(t)},'Quest deleted');closeModal();break}
     case 'dismisspen':S.dismissed=el.dataset.k;save();render();break;
     case 'ttoggle':toggleTask(id);break;
-    case 'tdel':if(armed(el)){S.tasks=S.tasks.filter(x=>x.id!==id);save();render()}break;
+    case 'tdel':if(armed(el))commit(()=>{S.tasks=S.tasks.filter(x=>x.id!==id)},'Task deleted');break;
     case 'wkt':commit(()=>{S.wkTarget=clamp(S.wkTarget+Number(el.dataset.d),1,7)});break;
     case 'wotype':readExRows();woType=el.dataset.v;render();break;
     case 'exadd':readExRows();exRows.push({n:'',s:'',r:'',w:''});render();break;
     case 'worepeat':{const w=recentWorkouts[+el.dataset.i];if(!w)break;woType=w.type;exRows=w.ex?w.ex.map(e=>({n:e.name,s:e.sets,r:e.reps,w:e.kg?r1(S.unit==='lb'?e.kg*KG_LB:e.kg):''})):defaultRows();render();const f=$('#woform');if(f){f.querySelector('#wo_name').value=w.name||'';f.querySelector('#wo_min').value=w.min||'';const km=f.querySelector('#wo_km');if(km)km.value=w.km||''}break}
-    case 'wodel':if(armed(el))commit(()=>{const h=S.hist[selDate];if(h&&h.w)h.w=h.w.filter(w=>w.id!==id)});break;
+    case 'wodel':if(armed(el))commit(()=>{const h=S.hist[selDate];if(h&&h.w)h.w=h.w.filter(w=>w.id!==id)},'Workout deleted');break;
     case 'ladder':ladderKey=el.dataset.k;render();break;
     case 'meal':foodMeal=el.dataset.v;render();break;
     case 'quickfood':{const q=quickFoods[+el.dataset.i];if(q)addFood({n:q[0],k:q[1],p:q[2],c:q[3],f:q[4]});break}
-    case 'fooddel':if(armed(el))commit(()=>{const h=S.hist[selDate];if(h&&h.f)h.f=h.f.filter(x=>x.id!==id)});break;
+    case 'fooddel':if(armed(el))commit(()=>{const h=S.hist[selDate];if(h&&h.f)h.f=h.f.filter(x=>x.id!==id)},'Food deleted');break;
     case 'water':commit(()=>{const h=day(selDate);h.wa=clamp((h.wa||0)+Number(el.dataset.d),0,30)});break;
-    case 'tstart':{const c=$('#tm_cls');S.timer={start:Date.now(),cls:c?c.value:''};save();render();break}
-    case 'tstop':{const tm=S.timer;if(!tm)break;const min=Math.min(360,Math.round((Date.now()-tm.start)/60000));S.timer=null;if(min<1){save();render();sys('Session too short','Sessions under a minute are not logged.');break}commit(()=>{const h=day(today());(h.s=h.s||[]).push({id:uid(),cls:tm.cls,min})});sys('Study logged',`${fmtDur(min)} added. +${Math.round(Math.min(min,240)*.3)} XP.`);break}
+    case 'tstart':{const c=$('#tm_cls'),pw=$('#pm_work'),pb=$('#pm_brk');if(pw&&pb)S.pomo={work:+pw.value||25,brk:+pb.value||5};const now=Date.now();
+      S.timer=el.dataset.mode==='pomo'?{start:now,ps:now,mode:'pomo',phase:'work',rounds:0,cls:c?c.value:''}:{start:now,cls:c?c.value:''};
+      if(el.dataset.mode==='pomo'&&'Notification' in window&&Notification.permission==='default'){try{Notification.requestPermission()}catch(e){}}
+      save();render();break}
+    case 'tstop':{pomoTick();const tm=S.timer;if(!tm)break;
+      if(tm.mode==='pomo'){S.timer=null;if(tm.phase==='work'){const min=Math.min(S.pomo.work,Math.floor((Date.now()-tm.ps)/60000));if(min>=1){commit(()=>{const h=day(today());(h.s=h.s||[]).push({id:uid(),cls:tm.cls,min})},'Partial round logged');sys('Pomodoro stopped',`${tm.rounds||0} full round${tm.rounds===1?'':'s'}, plus ${min} min logged.`);break}}
+        save();render();sys('Pomodoro stopped',`${tm.rounds||0} full round${tm.rounds===1?'':'s'} logged.`);break}
+      const min=Math.min(360,Math.round((Date.now()-tm.start)/60000));S.timer=null;if(min<1){save();render();sys('Session too short','Sessions under a minute are not logged.');break}commit(()=>{const h=day(today());(h.s=h.s||[]).push({id:uid(),cls:tm.cls,min})},'Study session logged');sys('Study logged',`${fmtDur(min)} added. +${Math.round(Math.min(min,240)*.3)} XP.`);break}
     case 'tcancel':S.timer=null;save();render();break;
-    case 'studydel':if(armed(el))commit(()=>{const h=S.hist[selDate];if(h&&h.s)h.s=h.s.filter(x=>x.id!==id)});break;
-    case 'clsdel':if(armed(el)){S.classes=S.classes.filter(c=>c.id!==id);S.tasks.forEach(t=>{if(t.cls===id)t.cls=''});save();render()}break;
-    case 'skdel':if(armed(el)){S.skills=S.skills.filter(x=>x.id!==id);S.quests.forEach(q=>{if(q.skill===id)q.skill=''});save();render()}break;
+    case 'studydel':if(armed(el))commit(()=>{const h=S.hist[selDate];if(h&&h.s)h.s=h.s.filter(x=>x.id!==id)},'Study session deleted');break;
+    case 'clsdel':if(armed(el))commit(()=>{S.classes=S.classes.filter(c=>c.id!==id);S.tasks.forEach(t=>{if(t.cls===id)t.cls=''})},'Class deleted');break;
+    case 'skdel':if(armed(el))commit(()=>{S.skills=S.skills.filter(x=>x.id!==id);S.quests.forEach(q=>{if(q.skill===id)q.skill=''})},'Skill deleted');break;
+    case 'undo':doUndo();break;
+    case 'edit':openEdit(el.dataset.kind,id,el.dataset.k);break;
+    case 'gcls':gradeCls=id;render();break;
+    case 'scan':openScanner();break;
+    case 'cloudback':cloudStage='';render();break;
+    case 'cloudout':if(sb)sb.auth.signOut().then(()=>{sbStop();render()});break;
+    case 'cloudsync':if(sbUser){sbPull(true).then(()=>sys('Synced','Up to date.'),()=>sys('Sync failed','Check your connection.'))}break;
+    case 'cloudforget':if(armed(el)){try{localStorage.removeItem(CLOUD_KEY)}catch(e){}if(sb&&sbUser)sb.auth.signOut();sbStop();sb=null;render()}break;
+    case 'pushon':pushEnable();break;
+    case 'pushoff':pushDisable();break;
+    case 'install':if(installEvt){installEvt.prompt();installEvt.userChoice.finally(()=>{installEvt=null;render()})}break;
+    case 'pcopy':{const txt=`Join my Ascension party "${S.party.name}" with code ${S.party.code}: ${location.origin+location.pathname}#party`;try{navigator.clipboard.writeText(txt).then(()=>sys('Copied','Invite copied. Send it to your friend.'))}catch(e){sys('Invite code',S.party.code)}break}
+    case 'prefresh':partyLoad().then(render);break;
+    case 'pleave':if(armed(el))partyLeave();break;
+    case 'offpick':{const p=off.res&&off.res[+el.dataset.i];if(p){off.pick=p;off.g=p.serv||100;offPaint()}break}
+    case 'offback':off.pick=null;if(!off.res)off.err='';offPaint();break;
+    case 'offadd':{const p=off.pick;if(!p)break;const g=Math.max(1,Number(($('#off_g')||{}).value)||100),m=g/100;off.pick=null;addFood({n:`${p.name}, ${Math.round(g)} g`,k:p.k*m,p:p.p*m,c:p.c*m,f:p.f*m});break}
+    case 'mealsave':openMealSave(el.dataset.v);break;
+    case 'mealmanage':openMealManage();break;
+    case 'mealdel':if(armed(el)){commit(()=>{S.meals=S.meals.filter(m=>m.id!==id)},'Saved meal deleted');openMealManage()}break;
+    case 'mealadd':{const m=S.meals.find(x=>x.id===id);if(!m)break;commit(()=>m.items.forEach(x=>addFood(x,true)),`Logged ${m.name}`);sys('Meal logged',`${m.name}: ${fmtN(m.items.reduce((n,x)=>n+(+x.k||0),0))} kcal added to ${foodMeal||defaultMeal()}.`);break}
+    case 'rostart':{const r=S.routines.find(x=>x.id===id);if(!r)break;loadRoutine(r);sub.train='log';selDate=today();render();const f=$('#woform');if(f){f.querySelector('#wo_name').value=r.name;f.scrollIntoView({behavior:'smooth',block:'start'})}break}
+    case 'rosave':{readExRows();const ex=exRows.filter(r=>r.n.trim()).map(r=>({name:r.n.trim().slice(0,40),sets:+r.s||3,reps:+r.r||8}));if(!ex.length){sys('Add exercises first','Fill in at least one exercise, then save it as a routine.');break}
+      const nm=(($('#wo_name')||{}).value||'').trim()||'Routine '+(S.routines.length+1);const ex0=S.routines.find(r=>r.name.toLowerCase()===nm.toLowerCase());
+      commit(()=>{if(ex0)ex0.ex=ex;else S.routines.push({id:'ro_'+uid(),name:nm.slice(0,40),ex})},ex0?'Routine updated':'Routine saved');sys(ex0?'Routine updated':'Routine saved',`${nm}: ${ex.length} exercise${ex.length>1?'s':''}. Start it from the Log tab next time.`);break}
+    case 'rodel':if(armed(el))commit(()=>{S.routines=S.routines.filter(r=>r.id!==id);if(activeRoutine===id)activeRoutine=''},'Routine deleted');break;
+    case 'roppl':commit(()=>PPL.forEach(([n,ex])=>{if(!S.routines.some(r=>r.name===n))S.routines.push({id:'ro_'+uid(),name:n,ex:ex.map(([name,sets,reps])=>({name,sets,reps}))})}),'Push / Pull / Legs added');break;
+    case 'rest':{const v=+el.dataset.v;restT=v?{end:Date.now()+v*1000,dur:v}:null;const b=$('#restbox');if(b){b.classList.remove('ding');b.innerHTML=restInner()}break}
+    case 'gcatdel':{const c=classOf(gradeCls);if(c&&c.gr&&armed(el))commit(()=>{c.gr.cats=c.gr.cats.filter(k=>k.id!==id)},'Category removed');break}
+    case 'grdel':if(armed(el))commit(()=>{S.grades=S.grades.filter(g=>g.id!==id)},'Score deleted');break;
+    case 'planrev':{const tk=S.tasks.find(x=>x.id===id);if(!tk)break;let n=0;commit(()=>{n=scheduleReviews(tk)},'Reviews planned');sys(n?'Reviews planned':'Too close',n?`${n} review session${n>1?'s':''} added before ${tk.title}.`:'The review days for this test have already passed. Review today instead.');break}
+    case 'fcstart':fcStart(id,el.dataset.all==='1');break;
+    case 'fcshow':if(fc){fc.show=true;fcRender()}break;
+    case 'fcans':if(fc)fcAnswer(el.dataset.v==='1');break;
+    case 'fclist':renderCardList(id);break;
+    case 'fcdel':{if(!armed(el))break;const k=S.cards.find(x=>x.id===id);commit(()=>{S.cards=S.cards.filter(x=>x.id!==id)},'Card deleted');if(k)renderCardList(k.cls);break}
+    case 'bookrate':{const b=S.books.find(x=>x.id===id);if(b)commit(()=>{b.rating=+el.dataset.v});break}
+    case 'bookdone':{const b=S.books.find(x=>x.id===id);if(b)commit(()=>{if(b.pages)logPages(b,b.pages);b.status='done';b.fin=b.fin||today()},`Finished ${b.title}`);break}
+    case 'bookstart':{const b=S.books.find(x=>x.id===id);if(b)commit(()=>{b.status='reading';b.start=today()},'Book started');break}
+    case 'bookdel':if(armed(el))commit(()=>{S.books=S.books.filter(x=>x.id!==id)},'Book deleted');break;
+    case 'report':openReport(el.dataset.k);break;
+    case 'buy':{const r=S.rewards.find(x=>x.id===id);if(!r||C().coins<r.cost)break;commit(()=>S.buys.push({id:uid(),rid:r.id,name:r.name,cost:r.cost,d:today()}),`Redeemed ${r.name}`);sys('Reward redeemed',`Enjoy: ${r.name}. −${fmtN(r.cost)} coins.`);break}
+    case 'rwdel':if(armed(el))commit(()=>{S.rewards=S.rewards.filter(x=>x.id!==id)},'Reward removed');break;
     case 'swatch':classColor=el.dataset.v;el.parentNode.querySelectorAll('button').forEach(b=>{b.classList.toggle('on',b===el);b.setAttribute('aria-pressed',b===el)});break;
     case 'bssync':bsStatus='Syncing…';render();bsSync(true);break;
     case 'calm':{const [y,m]=calMonth.split('-').map(Number);const d=new Date(y,m-1+Number(el.dataset.d),1);calMonth=d.getFullYear()+'-'+pad(d.getMonth()+1);render();break}
@@ -1576,17 +2366,34 @@ document.addEventListener('click',e=>{
     case 'resetyes':S=defaults();save();render();sys('Reset','All progress erased.');break;
   }
 });
-function addFood(e){
-  commit(()=>{const h=day(selDate);if(!h.tg){const T=targets();h.tg={k:T.kcal,p:T.p}}(h.f=h.f||[]).push({id:uid(),n:String(e.n).slice(0,60),k:Math.round(+e.k||0),p:r1(+e.p||0),c:r1(+e.c||0),f:r1(+e.f||0),m:foodMeal||defaultMeal()})});
+function addFood(e,quiet){
+  const fn=()=>{const h=day(selDate);if(!h.tg){const T=targets();h.tg={k:T.kcal,p:T.p}}(h.f=h.f||[]).push({id:uid(),n:String(e.n).slice(0,60),k:Math.round(+e.k||0),p:r1(+e.p||0),c:r1(+e.c||0),f:r1(+e.f||0),m:e.m||foodMeal||defaultMeal()})};
+  if(quiet)return fn();
+  commit(fn,`Added ${String(e.n).slice(0,30)}`);
 }
+document.addEventListener('input',e=>{
+  const el=e.target;
+  if(el.id==='off_g'&&off.pick){const p=off.pick,g=Math.max(0,Number(el.value)||0),m=g/100;off.g=g;const o=$('#off_calc');if(o)o.textContent=`${Math.round(p.k*m)} kcal · P ${r1(p.p*m)} · C ${r1(p.c*m)} · F ${r1(p.f*m)}`}
+  if(el.id==='off_q')off.q=el.value;
+  if(el.id==='pl_t'||el.id==='pl_bar'){const o=$('#pl_out');if(o)o.innerHTML=platesFor(Number(($('#pl_t')||{}).value))}
+});
 document.addEventListener('change',e=>{
   const el=e.target;
+  if(el.id==='pl_bar'){const o=$('#pl_out');if(o)o.innerHTML=platesFor(Number(($('#pl_t')||{}).value))}
+  if(el.id==='liftsel'){liftSel=el.value;render()}
   if(el.id==='seldate'&&el.value){selDate=el.value>today()?today():el.value;render()}
   if(el.id==='icsfile'&&el.files&&el.files[0]){const fr=new FileReader();fr.onload=()=>{const r=importICS(fr.result);bsStatus=r.msg;sys(r.ok?'Brightspace imported':'Import failed',r.msg);render()};fr.readAsText(el.files[0])}
 });
 document.addEventListener('submit',e=>{
   const f=e.target;e.preventDefault();const fd=new FormData(f),kind=f.dataset.form;
-  if(kind==='task'){const title=String(fd.get('title')||'').trim();if(!title)return;S.tasks.push({id:uid(),title,cls:fd.get('tk_cls')||'',type:fd.get('tk_type')||'Homework',due:fd.get('due')||'',diff:fd.get('tk_diff')||'C',done:false});save();render();sys('Task added',title);return}
+  if(kind==='task'){const title=String(fd.get('title')||'').trim();if(!title)return;const tk={id:uid(),title,cls:fd.get('tk_cls')||'',type:fd.get('tk_type')||'Homework',due:fd.get('due')||'',diff:fd.get('tk_diff')||'C',done:false};let n=0;commit(()=>{S.tasks.push(tk);n=scheduleReviews(tk)},'Task added');sys('Task added',title+(n?` · ${n} review session${n>1?'s':''} planned`:''));return}
+  if(kind==='gset'){const c=classOf(f.dataset.id);if(!c)return;commit(()=>{c.gr=Object.assign({cats:[],fw:0,target:90},c.gr||{});c.gr.target=clamp(Number(fd.get('target'))||90,1,110);c.gr.fw=clamp(Number(fd.get('fw'))||0,0,100)});sys('Saved','Grade target updated.');return}
+  if(kind==='gcat'){const c=classOf(f.dataset.id),n=String(fd.get('n')||'').trim(),w=Number(fd.get('w'));if(!c||!n||!(w>0))return;commit(()=>{c.gr=Object.assign({cats:[],fw:0,target:90},c.gr||{});c.gr.cats.push({id:'gc_'+uid(),n:n.slice(0,30),w:clamp(w,1,100)})});return}
+  if(kind==='grade'){const c=classOf(f.dataset.id),n=String(fd.get('n')||'').trim(),sc=Number(fd.get('s')),m=Number(fd.get('m'));if(!c||!n||!(sc>=0)||!(m>0))return;commit(()=>S.grades.push({id:uid(),cls:c.id,cat:fd.get('cat')||'',n:n.slice(0,60),s:sc,m,d:fd.get('d')||today()}),'Score added');const g=gradeCalc(c);sys('Score added',`${n}: ${Math.round(sc/m*100)}%. ${c.name} is now ${g.pct==null?'—':r1(g.pct)+'%'}.`);return}
+  if(kind==='card'){const cls=fd.get('fc_cls')||'',add=[];const q=String(fd.get('q')||'').trim(),a=String(fd.get('a')||'').trim();if(q&&a)add.push([q,a]);String(fd.get('bulk')||'').split(/\n/).forEach(l=>{const i=l.indexOf('|');if(i>0){const x=l.slice(0,i).trim(),y=l.slice(i+1).trim();if(x&&y)add.push([x,y])}});
+    if(!add.length){sys('Nothing to add','Fill in both sides, or use "front | back" lines.');return}commit(()=>add.forEach(([x,y])=>S.cards.push({id:uid(),cls,q:x.slice(0,300),a:y.slice(0,300),box:0,due:today()})),`${add.length} card${add.length>1?'s':''} added`);return}
+  if(kind==='book'){const t=String(fd.get('t')||'').trim();if(!t)return;const st=fd.get('bk_s')||'reading',pg=Math.round(Number(fd.get('p')))||0;commit(()=>S.books.push({id:uid(),title:t.slice(0,100),author:String(fd.get('a')||'').trim().slice(0,60),pages:pg,page:st==='done'?pg:0,status:st,start:st!=='want'?today():'',fin:st==='done'?today():''}),'Book added');return}
+  if(kind==='bookpage'){const b=S.books.find(x=>x.id===f.dataset.id),v=Number(fd.get('page'));if(!b||!(v>=0)||fd.get('page')==='')return;let d=0;commit(()=>{d=logPages(b,b.pages?Math.min(v,b.pages):v)},'Page updated');if(d>0&&b.status!=='done')sys('Reading logged',`+${d} pages of ${b.title}.`);return}
   if(kind==='quest'){
     const name=String(fd.get('name')||'').trim();if(!name)return;
     const days=String(fd.get('days')||'').split(',').filter(x=>x!=='').map(Number),tgt=Number(fd.get('target'))||0,unit=String(fd.get('unit')||'').trim();
@@ -1603,12 +2410,13 @@ document.addEventListener('submit',e=>{
     if(woType!=='strength'&&!min){sys('Add a duration','Enter how many minutes the workout took.');return}
     commit(()=>{
       (day(selDate).w=day(selDate).w||[]).push(w);
+      if(activeRoutine){const ro=S.routines.find(x=>x.id===activeRoutine);if(ro){w.rid=ro.id;ro.last=selDate}}
       (w.ex||[]).forEach(e=>{for(const k of ['bench','squat','deadlift','ohp']){if(BM[k].re.test(e.name)&&e.kg>0&&e.reps>=1&&e.reps<=12){logBenchmark(k,e.reps===1?e.kg:e.kg*(1+e.reps/30),e.reps>1,selDate)}}
         if(BM.pullups.re.test(e.name)&&!e.kg&&e.reps)logBenchmark('pullups',e.reps,false,selDate);
         if(BM.pushups.re.test(e.name)&&e.reps)logBenchmark('pushups',e.reps,false,selDate);});
       if(woType==='cardio'&&min&&km){if(Math.abs(km-5)<.15)logBenchmark('run5k',min*5/km,false,selDate);else if(Math.abs(km-1.609)<.05)logBenchmark('mile',min,false,selDate)}
-    });
-    exRows=defaultRows();sys('Workout logged',`${w.name}${min?' · '+fmtDur(min):''}.`);render();return;
+    },'Workout logged');
+    exRows=defaultRows();activeRoutine='';sys('Workout logged',`${w.name}${min?' · '+fmtDur(min):''}.`);render();return;
   }
   if(kind==='bm'){const k=f.dataset.k,v=parseBm(k,f.querySelector('input').value);if(!(v>0)){sys('Check the value',`Enter ${BM[k].name} as ${bmHint(k)}.`);return}commit(()=>{if(!logBenchmark(k,v,false))sys('Record logged',`${BM[k].name}: ${fmtBm(k,v)}. Best is still ${fmtBm(k,bmBest(k))}.`)});return}
   if(kind==='food'){const k=Number(fd.get('k'));if(!(k>=0)||!String(fd.get('n')||'').trim())return;addFood({n:String(fd.get('n')).trim(),k,p:fd.get('p'),c:fd.get('c'),f:fd.get('f')});return}
@@ -1620,19 +2428,37 @@ document.addEventListener('submit',e=>{
       const T=targets(),hd=S.hist[today()];if(hd&&hd.tg)hd.tg={k:T.kcal,p:T.p}});
     sys('Goal saved',`Daily target: ${fmtN(targets().kcal)} kcal, ${targets().p} g protein.`);return;
   }
-  if(kind==='study'){const min=Number(fd.get('min'));if(!(min>0))return;commit(()=>{const h=day(selDate);(h.s=h.s||[]).push({id:uid(),cls:fd.get('st_cls')||'',min:Math.min(600,Math.round(min))})});return}
+  if(kind==='study'){const min=Number(fd.get('min'));if(!(min>0))return;commit(()=>{const h=day(selDate);(h.s=h.s||[]).push({id:uid(),cls:fd.get('st_cls')||'',min:Math.min(600,Math.round(min))})},'Study session added');return}
+  if(kind==='edit'){saveEdit(f,fd);return}
+  if(kind==='cloudcfg'){const u=String(fd.get('u')||'').trim().replace(/\/+$/,''),k=String(fd.get('k')||'').trim(),v=String(fd.get('v')||'').trim();if(!/^https:\/\/.+/.test(u)||k.length<20){sys('Check the details','Paste the Project URL and anon public key from Supabase → Project Settings → API.');return}lsSet(CLOUD_KEY,JSON.stringify({url:u,key:k,vapid:v}));cloudMsg='';sbInit();return}
+  if(kind==='cloudemail'){const em=String(fd.get('email')||'').trim();if(!em||!sb)return;cloudEmail=em;sb.auth.signInWithOtp({email:em,options:{emailRedirectTo:location.origin+location.pathname}}).then(({error})=>{if(error){cloudMsg=/fetch|network/i.test(error.message||'')?'Couldn\'t reach your Supabase project. Check the Project URL, or your connection.':(error.message||'Could not send the email.')}else{cloudStage='sent';cloudMsg=''}render()});return}
+  if(kind==='cloudcode'){const code=String(fd.get('code')||'').replace(/\s/g,'');if(!code||!sb)return;
+    let args={email:cloudEmail,token:code,type:'email'};
+    if(/^https?:/i.test(code)){try{const u=new URL(code),th=u.searchParams.get('token')||u.searchParams.get('token_hash');if(!th)throw 0;const ty=u.searchParams.get('type');args={token_hash:th,type:ty==='signup'||ty==='invite'||ty==='recovery'||ty==='email_change'?ty:'email'}}catch(e){cloudMsg='That doesn\'t look like the sign-in link from the email.';render();return}}
+    sb.auth.verifyOtp(args).then(({error})=>{if(error){cloudMsg='That link or code didn\'t work (they expire after an hour and work once). Request a new email.';render()}else cloudMsg=''});return}
+  if(kind==='pcreate'){const n=String(fd.get('n')||'').trim();if(n)partyCreate(n);return}
+  if(kind==='pjoin'){const c=String(fd.get('c')||'').trim();if(c)partyJoin(c);return}
+  if(kind==='offsearch'){const q=String(fd.get('q')||'').trim();if(q.length<2)return;offSearch(q);return}
+  if(kind==='barcode'){const c=String(fd.get('code')||'');stopScan();closeModal();offBarcode(c);return}
+  if(kind==='mealsave'){const meal=f.dataset.v,n=String(fd.get('n')||'').trim(),es=((S.hist[selDate]||{}).f||[]).filter(e=>(e.m||'Snack')===meal);if(!n||!es.length)return;
+    const items=es.map(e=>({n:e.n,k:e.k,p:e.p,c:e.c,f:e.f})),ex=S.meals.find(m=>m.name.toLowerCase()===n.toLowerCase());
+    commit(()=>{if(ex)ex.items=items;else S.meals.push({id:'ml_'+uid(),name:n.slice(0,40),items})},ex?'Saved meal updated':'Meal saved');closeModal();sys('Meal saved',`${n} is now a one-tap chip in Find a food.`);return}
+  if(kind==='routine'){const n=String(fd.get('n')||'').trim(),ex=parseRoutineLines(fd.get('x'));if(!n||!ex.length)return;commit(()=>S.routines.push({id:'ro_'+uid(),name:n.slice(0,40),ex}),'Routine saved');sys('Routine saved',`${n}: ${ex.length} exercise${ex.length>1?'s':''}.`);return}
+  if(kind==='reward'){const n=String(fd.get('n')||'').trim(),c=Math.round(Number(fd.get('c')));if(!n||!(c>0))return;commit(()=>S.rewards.push({id:'rw_'+uid(),name:n.slice(0,40),cost:c}));sys('Reward added',`${n}: ${fmtN(c)} coins.`);return}
   if(kind==='class'){const name=String(fd.get('name')||'').trim();if(!name)return;S.classes.push({id:'c_'+uid(),name,color:classColor});save();render();return}
   if(kind==='skill'){const name=String(fd.get('name')||'').trim();if(!name)return;S.skills.push({id:'sk_'+uid(),name,stat:fd.get('sk_stat')||'INT'});save();render();return}
   if(kind==='bspass'){const p=String(fd.get('pass')||'');if(p.length<8){bsStatus='Use a passphrase of at least 8 characters.';render();return}lsSet(PASS_KEY,p);bsStatus='Passphrase saved on this device.';render();bsSync(true);return}
   if(kind==='profile'){commit(()=>{S.name=String(fd.get('name')||'').trim()||ST.person;S.title=String(fd.get('title')||'').trim();S.unit=fd.get('unit')==='lb'?'lb':'kg';S.sex=fd.get('sex')==='f'?'f':'m'});sys('Profile saved','Your settings are updated.')}
 });
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').hidden)closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').hidden){fc=null;stopScan();closeModal()}});
 window.addEventListener('hashchange',()=>{const k=location.hash.slice(1);if(TABS.includes(k)&&k!==tab){tab=k;render()}});
 
 let lastDay=today();
 setInterval(()=>{
   const c=$('#countdown');if(c)c.textContent=countdown();
-  const tm=$('#timer');if(tm&&S.timer)tm.textContent=fmtClock((Date.now()-S.timer.start)/1000);
+  if(S.timer&&S.timer.mode==='pomo')pomoTick();
+  restTick();
+  const tm=$('#timer');if(tm&&S.timer)tm.textContent=timerText();
   const t=today();if(t!==lastDay){if(selDate===lastDay)selDate=t;lastDay=t;CC=null;render()}
 },1000);
 
@@ -1655,6 +2481,9 @@ drawBg();let bgT;addEventListener('resize',()=>{clearTimeout(bgT);bgT=setTimeout
 
 render();
 connect();
+sbInit();
+registerSW();
+if(location.hash==='#party'&&S.party==null)setTab('party');
 if(lsGet(PASS_KEY)&&(!S.bsLast||Date.now()-Date.parse(S.bsLast)>3600e3))bsSync(false);
 })();
 </script>
