@@ -1,0 +1,16 @@
+[workspace]
+resolver = "2"
+members = ["core", "app", "xtask"]
+default-members = ["core", "app", "xtask"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[profile.release]
+# Small, fast WebAssembly engine and desktop binary.
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true
