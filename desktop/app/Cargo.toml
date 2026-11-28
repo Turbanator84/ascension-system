@@ -1,0 +1,19 @@
+[package]
+name = "ascension-desktop"
+description = "Ascension System desktop app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+default-run = "ascension-desktop"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+ascension-core = { path = "../core" }
+tauri = { version = "2", features = [] }
+tauri-plugin-notification = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }

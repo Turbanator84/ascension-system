@@ -1,0 +1,13 @@
+[package]
+name = "ascension-core"
+description = "Game engine for Ascension System: XP, levels, ranks, streaks, bosses, nutrition targets and Brightspace import."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+# rlib for the desktop app and tests, cdylib for the WebAssembly engine the UI calls.
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+serde_json = { version = "1", features = ["preserve_order"] }

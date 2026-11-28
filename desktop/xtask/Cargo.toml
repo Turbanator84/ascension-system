@@ -1,0 +1,9 @@
+[package]
+name = "xtask"
+description = "Build helper: compiles the WebAssembly engine and assembles the desktop app's UI"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]

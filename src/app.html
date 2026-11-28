@@ -638,7 +638,8 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;background:var(--f
 <datalist id="exlist"><option>Bench Press</option><option>Back Squat</option><option>Deadlift</option><option>Overhead Press</option><option>Barbell Row</option><option>Pull-ups</option><option>Chin-ups</option><option>Dips</option><option>Incline Dumbbell Press</option><option>Romanian Deadlift</option><option>Leg Press</option><option>Lat Pulldown</option><option>Bicep Curl</option><option>Tricep Pushdown</option><option>Lateral Raise</option><option>Lunges</option><option>Push-ups</option><option>Plank</option></datalist>
 
 <script>
-(function(){
+// Desktop app: window.AscensionBoot waits for the save file and the Rust engine, then starts the UI.
+(window.AscensionBoot||(f=>f()))(function(){
 "use strict";
 // ================= constants =================
 // Two styles share the same 8-step ladder; only names, badges and look change.
@@ -988,6 +989,7 @@ async function connect(){
 
 // ================= nutrition math =================
 function targets(){
+  const E=window.AscensionEngine;if(E)try{return E.targets({bw:S.bw,hcm:S.hcm,age:S.age,sex:S.sex,act:S.act,goal:S.goal,rate:S.rate,kcalOverride:S.kcalOverride})}catch(e){console.error('engine',e)}
   const w=S.bw,h=S.hcm,a=S.age;
   const bmr=10*w+6.25*h-5*a+(S.sex==='f'?-161:5);
   const tdee=bmr*(ACT[S.act]||ACT.moderate)[0];
@@ -1071,7 +1073,9 @@ function weekStreak(weeks){
   for(let i=0;i<200&&k<=cw;i++,k=addDays(k,7)){const ok=(weeks[k]||0)>=S.wkTarget;if(ok){run++;if(run>best)best=run}else if(k!==cw)run=0}
   return {cur:run,best};
 }
-function compute(){
+// The Rust engine (desktop app) computes the same totals; the JavaScript version is the fallback.
+function compute(){const E=window.AscensionEngine;if(E)try{return E.compute(S,today())}catch(e){console.error('engine',e)}return computeJS()}
+function computeJS(){
   const t=today(),R={days:{},xp:{daily:0,train:0,fuel:0,school:0},pts:{STR:0,AGI:0,VIT:0,INT:0,WIL:0},skill:{},cls:{},clsMin:{},weeks:{},
     cnt:{quests:0,clears:0,workouts:0,sets:0,km:0,trainMin:0,fuelDays:0,fuelOn:0,studyMin:0,tasksDone:0,tasksOnTime:0,prs:0,weightLogs:0,pomo:0,cards:0,pages:0,books:0,bosses:0}};
   const rs=S.skills.find(x=>/read/i.test(x.name)),readSkill=rs&&rs.id;
@@ -1278,6 +1282,8 @@ function ensureClass(name){
   return c.id;
 }
 function importICS(txt){
+  const E=window.AscensionEngine;
+  if(E)try{const b=snap(),r=E.importIcs(S,String(txt),today(),Date.now());if(!r.ok)return {ok:false,msg:r.msg};S=normalize(r.state);CC=null;save();announce(b);render();return {ok:true,msg:r.msg}}catch(e){console.error('engine',e)}
   const evs=parseICS(txt);
   if(!evs.length)return {ok:false,msg:'No calendar events found. Check that you used the Brightspace calendar feed.'};
   const t=today(),min=addDays(t,-7);let added=0,updated=0,reviews=0;
@@ -1313,6 +1319,12 @@ async function decryptFeed(j,pass){
 }
 let bsStatus='';
 async function bsSync(manual){
+  const D=window.AscensionDesktop;
+  if(D){
+    if(!D.hasFeed()){if(manual){bsStatus='Paste your Brightspace feed link below first.';render()}return}
+    try{const res=importICS(await D.fetchFeed());bsStatus=`Synced ${new Date().toLocaleTimeString()}. ${res.msg}`;if(manual||/^[1-9]/.test(res.msg))sys('Brightspace synced',res.msg)}catch(e){bsStatus=String(e&&e.message||e)}
+    render();return;
+  }
   const pass=lsGet(PASS_KEY)||'';
   if(!pass){if(manual){bsStatus='Enter your sync passphrase first.';render()}return}
   try{
@@ -1804,12 +1816,13 @@ function brightspaceCard(){
   return `<section class="win stack"><div class="row between wrap"><h3>Brightspace sync</h3><span class="note">${S.bsLast?'Last import '+esc(new Date(S.bsLast).toLocaleString()):'Not connected yet'}</span></div>
     <div class="row wrap" style="gap:8px"><button class="btn pri" data-act="bssync">Sync now</button><label class="btn" for="icsfile" style="cursor:pointer">Import .ics file</label><input type="file" id="icsfile" accept=".ics,text/calendar" hidden></div>
     ${bsStatus?`<div class="note" role="status">${esc(bsStatus)}</div>`:''}
-    <form class="row wrap" data-form="bspass" autocomplete="off" style="gap:8px"><input id="bs_pass" name="pass" type="password" placeholder="${hasPass?'Passphrase saved on this device':'Sync passphrase'}" style="flex:1;min-width:160px" aria-label="Sync passphrase"><button class="btn" type="submit">${hasPass?'Replace':'Save'} passphrase</button></form>
+    ${window.AscensionDesktop?`<form class="row wrap" data-form="bsfeed" autocomplete="off" style="gap:8px"><input id="bs_feed" name="feed" type="password" placeholder="${window.AscensionDesktop.hasFeed()?'Feed link saved on this computer':'Brightspace feed link'}" style="flex:1;min-width:160px" aria-label="Brightspace feed link"><button class="btn" type="submit">${window.AscensionDesktop.hasFeed()?'Replace':'Save'} link</button></form>
+    <div class="note">The desktop app checks your feed every 3 hours while it's open.</div>`:`<form class="row wrap" data-form="bspass" autocomplete="off" style="gap:8px"><input id="bs_pass" name="pass" type="password" placeholder="${hasPass?'Passphrase saved on this device':'Sync passphrase'}" style="flex:1;min-width:160px" aria-label="Sync passphrase"><button class="btn" type="submit">${hasPass?'Replace':'Save'} passphrase</button></form>`}
     <details><summary>How Brightspace sync works</summary><ol>
       <li>In Brightspace, open <b>Calendar</b>, choose <b>Subscribe</b>, and copy the feed link. Tick “all courses” if offered.</li>
-      <li><b>Automatic:</b> in your GitHub repository, add two secrets: <code>BRIGHTSPACE_ICS_URL</code> (the feed link) and <code>SYNC_PASSPHRASE</code> (any long phrase). The repo fetches your feed every 3 hours, encrypts it and publishes it with the app on GitHub Pages. Enter the same passphrase here.</li>
+      ${window.AscensionDesktop?'<li><b>Desktop app:</b> paste the feed link above. It stays on this computer and the app fetches it directly.</li>':''}<li><b>Website:</b> in your GitHub repository, add two secrets: <code>BRIGHTSPACE_ICS_URL</code> (the feed link) and <code>SYNC_PASSPHRASE</code> (any long phrase). The repo fetches your feed every 3 hours, encrypts it and publishes it with the app on GitHub Pages. Enter the same passphrase here.</li>
       <li><b>Manual:</b> open the feed link in your browser to download the .ics file, then use Import .ics file.</li>
-      <li>Every assignment, quiz, test and discussion becomes a task under its course. Tests get review sessions 5 and 2 days before; quizzes get one the day before. Re-syncing updates changed due dates without duplicating tasks.</li></ol></details>
+      <li>Every assignment, quiz, test and discussion becomes a task under its course. Tests get review sessions 7, 4, 2 and 1 days before; quizzes 2 and 1 days before. Re-syncing updates changed due dates without duplicating tasks.</li></ol></details>
   </section>`;
 }
 function renderSchool(){
@@ -2447,6 +2460,7 @@ document.addEventListener('submit',e=>{
   if(kind==='reward'){const n=String(fd.get('n')||'').trim(),c=Math.round(Number(fd.get('c')));if(!n||!(c>0))return;commit(()=>S.rewards.push({id:'rw_'+uid(),name:n.slice(0,40),cost:c}));sys('Reward added',`${n}: ${fmtN(c)} coins.`);return}
   if(kind==='class'){const name=String(fd.get('name')||'').trim();if(!name)return;S.classes.push({id:'c_'+uid(),name,color:classColor});save();render();return}
   if(kind==='skill'){const name=String(fd.get('name')||'').trim();if(!name)return;S.skills.push({id:'sk_'+uid(),name,stat:fd.get('sk_stat')||'INT'});save();render();return}
+  if(kind==='bsfeed'){const u=String(fd.get('feed')||'').trim();if(!/^(https?|webcal):\/\//i.test(u)){bsStatus='That doesn\'t look like a feed link. Copy it from Brightspace → Calendar → Subscribe.';render();return}window.AscensionDesktop.setFeed(u).then(()=>{bsStatus='Feed link saved on this computer.';render();bsSync(true)},e=>{bsStatus=String(e);render()});return}
   if(kind==='bspass'){const p=String(fd.get('pass')||'');if(p.length<8){bsStatus='Use a passphrase of at least 8 characters.';render();return}lsSet(PASS_KEY,p);bsStatus='Passphrase saved on this device.';render();bsSync(true);return}
   if(kind==='profile'){commit(()=>{S.name=String(fd.get('name')||'').trim()||ST.person;S.title=String(fd.get('title')||'').trim();S.unit=fd.get('unit')==='lb'?'lb':'kg';S.sex=fd.get('sex')==='f'?'f':'m'});sys('Profile saved','Your settings are updated.')}
 });
@@ -2483,7 +2497,9 @@ render();
 connect();
 sbInit();
 registerSW();
+// Hooks for the desktop app and its tests.
+window.AscensionApp={importICS:t=>importICS(t),state:()=>S,computeJS:()=>computeJS(),setState:v=>{S=normalize(v);CC=null},render:()=>render(),bsSync:m=>bsSync(m)};
 if(location.hash==='#party'&&S.party==null)setTab('party');
 if(lsGet(PASS_KEY)&&(!S.bsLast||Date.now()-Date.parse(S.bsLast)>3600e3))bsSync(false);
-})();
+});
 </script>

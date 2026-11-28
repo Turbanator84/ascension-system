@@ -29,6 +29,10 @@ A leveling-system habit tracker with two looks you can switch between in Profile
 - **Routines.** Save "Push / Pull / Legs" once and start it in one tap. If you hit all your reps last time it suggests the next weight ("you did 80 kg × 5 last time, try 82.5").
 - **Food search and barcodes.** Uses [Open Food Facts](https://world.openfoodfacts.org), a free food database. Scanning uses the camera (BarcodeDetector where available, ZXing elsewhere, including iPhone).
 
+## Desktop app (Rust)
+
+There's also a native **Windows, macOS and Linux** app in [`desktop/`](desktop/README.md). Its game engine is written in Rust, it saves to a file on your computer with daily backups, fetches your Brightspace feed directly (no GitHub secrets needed), and sends reminder notifications. Installers are built by the **Desktop app (Rust)** workflow; see [desktop/README.md](desktop/README.md).
+
 ## How ranking works
 
 - **STR / AGI / VIT** come from real benchmarks (bench, squat, deadlift, overhead press, push-ups, pull-ups, 5K, mile, plank, resting heart rate). They're scaled to your bodyweight and sex. Until you log a benchmark, these stay provisional and can't go above Grade 3. Strength sets of 12 reps or fewer update your records automatically with an estimated one-rep max (Epley formula).
